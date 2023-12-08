@@ -1,0 +1,7 @@
+= WildFly Clustering Examples
+
+Set of examples demonstrating various features of WildFly Clustering.
+
+== License
+
+* https://www.apache.org/licenses/LICENSE-2.0[Apache License 2.0]
