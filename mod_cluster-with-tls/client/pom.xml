@@ -18,20 +18,31 @@
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- clusterbench libraries -->
+            <dependency>
+                <groupId>org.jboss.test</groupId>
+                <artifactId>clusterbench</artifactId>
+                <version>7.0.0.Final</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <!-- wildfly ejb client libraries -->
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-ejb-client-bom</artifactId>
             <type>pom</type>
             <scope>compile</scope>
         </dependency>
-
-        <!-- We depend on the EJB remote business interfaces of this application -->
+        <!-- clusterbench ejb libraries -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>server</artifactId>
-            <version>${project.version}</version>
-            <type>ejb-client</type>
+            <groupId>org.jboss.test</groupId>
+            <artifactId>clusterbench-ee10-ejb</artifactId>
+            <version>7.0.0.Final</version>
         </dependency>
     </dependencies>
 </project>

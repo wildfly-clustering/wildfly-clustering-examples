@@ -8,55 +8,65 @@
     </parent>
 
     <artifactId>server</artifactId>
-    <packaging>ejb</packaging>
+    <packaging>pom</packaging>
 
     <name>server</name>
-    <url>http://maven.apache.org</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
     <dependencies>
+        <!-- clusterbench ejb ear -->
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/jakarta.platform/jakarta.jakartaee-api -->
-        <dependency>
-            <groupId>jakarta.platform</groupId>
-            <artifactId>jakarta.jakartaee-api</artifactId>
-            <version>10.0.0</version>
-            <scope>provided</scope>
+            <groupId>org.jboss.test</groupId>
+            <artifactId>clusterbench-ee10-ejb</artifactId>
+            <version>7.0.0.Final</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- WildFly plug-in to deploy the application -->
-            <plugin>
-                <groupId>org.wildfly.plugins</groupId>
-                <artifactId>wildfly-maven-plugin</artifactId>
-                <version>${version.org.wildfly.plugins.wildfly-maven-plugin}</version>
-                <configuration>
-                    <skip>false</skip>
-                    <filename>${project.build.finalName}.jar</filename>
-                </configuration>
-            </plugin>
+            <!-- maven plugin to download the deployment clusterbench-ee10-ejb jar-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-ejb-plugin</artifactId>
-                <version>${version.org.apache.maven.plugins.maven-ejb-plugin}</version>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${version.org.apache.maven.plugins.maven-dependency-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>copy-clusterbench-ear</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.jboss.test</groupId>
+                                    <artifactId>clusterbench-ee10-ejb</artifactId>
+                                    <type>ejb</type>
+                                    <outputDirectory>${project.basedir}/deployment</outputDirectory>
+                                    <destFileName>clusterbench-ejb.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- cleanup the deployment directory -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${version.org.apache.maven.plugins.maven-clean-plugin}</version>
                 <configuration>
-                    <ejbVersion>3.2</ejbVersion>
-                    <!-- this is false by default -->
-                    <generateClient>true</generateClient>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}/deployment</directory>
+                        </fileset>
+                    </filesets>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 </project>
