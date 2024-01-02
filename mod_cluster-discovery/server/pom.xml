@@ -1,0 +1,89 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.wildfly.clustering.examples</groupId>
+        <artifactId>mod_cluster-discovery</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>server</artifactId>
+    <packaging>jar</packaging>
+
+    <name>server</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <version.org.wildfly.plugins.wildfly-maven-plugin>4.2.1.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
+    </properties>
+
+    <dependencies>
+        <!-- clusterbench ejb ear -->
+        <dependency>
+            <groupId>org.jboss.test</groupId>
+            <artifactId>clusterbench-ee10-ejb</artifactId>
+            <version>7.0.0.Final</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- maven plugin to download the deployment clusterbench-ee10-ejb jar-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${version.org.apache.maven.plugins.maven-dependency-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>copy-clusterbench-ear</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.jboss.test</groupId>
+                                    <artifactId>clusterbench-ee10-ear</artifactId>
+                                    <version>7.0.0.Final</version>
+                                    <type>ear</type>
+                                    <outputDirectory>${project.basedir}/deployment</outputDirectory>
+                                    <destFileName>clusterbench-ee10.ear</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- cleanup the deployment directory -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${version.org.apache.maven.plugins.maven-clean-plugin}</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}/deployment</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <!-- use wildfly:deploy -Dwildfly.hostname=localhost -Dwildfly.port=9990 to deploy to localhost:9990 -->
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${version.org.wildfly.plugins.wildfly-maven-plugin}</version>
+                <configuration>
+                    <filename>clusterbench-ee10.ear</filename>
+                    <targetDir>${project.basedir}/deployment</targetDir>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
