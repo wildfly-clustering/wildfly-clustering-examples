@@ -1,0 +1,29 @@
+# Script for configuring a standalone-ha.xml profile for a worker using static discovery
+# NOTE: we assume we have started the server with standalone-ha.xml server profile and a port offset (e.g. 100, 200)
+
+# Run with: $WILDFLY_HOME/bin/jboss-cli.sh --connect --controller=localhost:9990 + <port offset> --file=configure-worker.cli
+
+# Configurations:
+# 1. disable dynamic discovery
+# 2. undefine the advertise socket attribute and remove its associated socket-binding
+# 3. define a remote outbound connection to the load balancer (reverse proxy)
+# 4. populate the static list of proxies in the modcluster subsystem to point to our load balancer
+
+batch
+
+# turn off dynamic discovery on the worker
+/subsystem=modcluster/proxy=default:write-attribute(name=advertise,value=false)
+
+# undefine the advertise-socket attribute
+/subsystem=modcluster/proxy=default:undefine-attribute(name=advertise-socket)
+
+# remove the associated socket binding
+/socket-binding-group=standard-sockets/socket-binding=modcluster:remove
+
+# define an outbound connection to the load balancer on its management interface
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=proxy1:add(host=localhost,port=8090)
+
+# update the static list of proxies to use
+/subsystem=modcluster/proxy=default:write-attribute(name=proxies, value=["proxy1"])
+
+run-batch
