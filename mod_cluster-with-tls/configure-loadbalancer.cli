@@ -1,0 +1,47 @@
+# Script for configuring a load balancer profile for mod_cluster with TLS
+# NOTE: we assume we have started the server with standalone-load-balancer.xml server profile, where:
+# - no https-listener defined for https
+# - an http-listener defined for MCMP management
+# Run with: $WILDFLY_HOME/bin/jboss-cli.sh --connect --file=configure-loadbalancer.cli
+
+# Configurations this script performs:
+# 1. set up server SSLContext and client SSLContext (see configure-keystores.sh)
+# 2. configure advertisement security key (if advertisement enabled)
+# 3. configure https-listener for "https" to use server SSLContext for incoming application traffic from clients
+# 4. configure mod-cluster filter to use client SSLContext for proxied application traffic to workers
+# 5. configure https-listener for "mcmp-management" to use server SSLContext for incoming management traffic from workers
+
+# NOTE: this configuration does not support remote+http
+
+batch
+
+# set up "server" SSLContext
+/subsystem=elytron/key-store=tlsServerKeyStore:add(path=tlsServer.keystore,relative-to=jboss.server.config.dir, credential-reference={clear-text=serverKeySecret}, type=pkcs12)
+/subsystem=elytron/key-store=tlsServerTrustStore:add(path=tlsServer.truststore,relative-to=jboss.server.config.dir, credential-reference={clear-text=serverTrustSecret}, type=pkcs12)
+/subsystem=elytron/key-manager=tlsServerKM:add(key-store=tlsServerKeyStore, credential-reference={clear-text=serverKeySecret})
+/subsystem=elytron/trust-manager=tlsServerTM:add(key-store=tlsServerTrustStore)
+/subsystem=elytron/server-ssl-context=tlsServerSSC:add(key-manager=tlsServerKM, trust-manager=tlsServerTM, protocols=["TLSv1.3", "TLSv1.2"])
+
+# set up "client" SSLContext
+/subsystem=elytron/key-store=tlsClientKeyStore:add(path=tlsClient.keystore,relative-to=jboss.server.config.dir, credential-reference={clear-text=clientKeySecret}, type=pkcs12)
+/subsystem=elytron/key-store=tlsClientTrustStore:add(path=tlsClient.truststore,relative-to=jboss.server.config.dir, credential-reference={clear-text=clientTrustSecret}, type=pkcs12)
+/subsystem=elytron/key-manager=tlsClientKM:add(key-store=tlsClientKeyStore, credential-reference={clear-text=clientKeySecret},alias-filter=client)
+/subsystem=elytron/trust-manager=tlsClientTM:add(key-store=tlsClientTrustStore)
+/subsystem=elytron/client-ssl-context=tlsClientCSC:add(key-manager=tlsClientKM, trust-manager=tlsClientTM, protocols=["TLSv1.3", "TLSv1.2"])
+
+# set up advertisement security key
+# /subsystem=undertow/configuration=filter/mod-cluster=load-balancer:write-attribute(name=security-key, value=my-security-key)
+
+# set up "server" SSLContext for https application traffic from clients
+/subsystem=undertow/server=default-server/https-listener=https:add(socket-binding=https,ssl-context=tlsServerSSC,enable-http2=true)
+
+# set up "client" SSLContext  for proxied application traffic to workers
+/subsystem=undertow/configuration=filter/mod-cluster=load-balancer:write-attribute(name=ssl-context, value=tlsClientCSC)
+
+# remove existing http-listener for MCMP traffic from workers
+/subsystem=undertow/server=default-server/http-listener=management:remove()
+
+# add new https-listener and set up "server" SSLContext for https MCMP traffic from workers
+/subsystem=undertow/server=default-server/https-listener=management:add(socket-binding=mcmp-management, ssl-context=tlsServerSSC,enable-http2=true)
+
+run-batch

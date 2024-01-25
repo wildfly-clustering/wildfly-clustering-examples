@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<configuration>
+    <authentication-client xmlns="urn:elytron:client:1.6">
+        <!-- authentication configuration -->
+        <authentication-rules>
+            <rule use-configuration="default"/>
+        </authentication-rules>
+        <authentication-configurations>
+            <configuration name="default">
+                <sasl-mechanism-selector selector="DIGEST-MD5"/>
+                <set-user-name name="quickstartUser"/>
+                <credentials>
+                    <clear-password password="quickstartPwd1!"/>
+                </credentials>
+                <providers>
+                    <use-service-loader/>
+                </providers>
+            </configuration>
+        </authentication-configurations>
+        <!-- SSL configuration -->
+        <key-stores>
+            <key-store name="client-keystore" type="PKCS12">
+                <resource name="tlsClient.keystore"/>
+                <key-store-clear-password password="clientKeySecret"/>
+            </key-store>
+            <key-store name="client-truststore" type="PKCS12">
+                <resource name="tlsClient.truststore"/>
+                <key-store-clear-password password="clientTrustSecret"/>
+            </key-store>
+        </key-stores>
+        <ssl-contexts>
+            <ssl-context name="client-ssl-context">
+                <trust-store key-store-name="client-truststore"/>
+                <key-store-ssl-certificate key-store-name="client-keystore" alias="client">
+                    <key-store-clear-password password="clientKeySecret"/>
+                </key-store-ssl-certificate>
+                <protocol names="TLSv1.3 TLSv1.2"/>
+            </ssl-context>
+        </ssl-contexts>
+        <ssl-context-rules>
+            <rule use-ssl-context="client-ssl-context">
+                <match-protocol name="https"/>
+            </rule>
+        </ssl-context-rules>
+    </authentication-client>
+    <jboss-ejb-client xmlns="urn:jboss:wildfly-client-ejb:3.2">
+        <connections>
+            <!-- points to the load balancer and its invoker context -->
+            <connection uri="https://localhost:8443/wildfly-services"/>
+        </connections>
+    </jboss-ejb-client>
+    <http-client xmlns="urn:wildfly-http-client:1.0">
+        <!-- default connection and connection pooling properties used by the HTTP client transport-->
+        <defaults>
+            <eagerly-acquire-session value="true"/>
+            <buffer-pool buffer-size="2000" max-size="10" direct="true" thread-local-size="1"/>
+            <enable-http2 value="false"/>
+        </defaults>
+    </http-client>
+</configuration>
