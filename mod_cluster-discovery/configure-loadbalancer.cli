@@ -1,0 +1,17 @@
+# Script for configuring a load balancer profile for mod_cluster with static discovery
+# NOTE: we assume we have started the server with standalone-loadbalancer.xml server profile with no port offset
+# Run with: $WILDFLY_HOME/bin/jboss-cli.sh --connect --file=configure-loadbalancer.cli
+
+# Configurations this script performs:
+# 1. disable advertisement by undefining the advertise-socket attribute
+# 2. remove the associated socket binding
+
+batch
+
+# undefine the advertise socket binding to disable advertisement on the load balancer
+/subsystem=undertow/configuration=filter/mod-cluster=load-balancer:undefine-attribute(name=advertise-socket-binding)
+
+# remove the associated socket binding
+/socket-binding-group=standard-sockets/socket-binding=modcluster:remove
+
+run-batch
