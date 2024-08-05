@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.wildfly.clustering.examples</groupId>
@@ -7,24 +6,16 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>server</artifactId>
+    <artifactId>mod_cluster-with-tls-server</artifactId>
     <packaging>jar</packaging>
 
-    <name>server</name>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <version.org.wildfly.plugins.wildfly-maven-plugin>4.2.1.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
-    </properties>
+    <name>WildFly Clustering Examples: mod_cluster-with-tls-server</name>
 
     <dependencies>
         <!-- clusterbench ejb ear -->
         <dependency>
             <groupId>org.jboss.test</groupId>
             <artifactId>clusterbench-ee10-ejb</artifactId>
-            <version>7.0.0.Final</version>
         </dependency>
     </dependencies>
 
@@ -48,7 +39,7 @@
                                 <artifactItem>
                                     <groupId>org.jboss.test</groupId>
                                     <artifactId>clusterbench-ee10-ear</artifactId>
-                                    <version>7.0.0.Final</version>
+                                    <version>${version.clusterbench}</version>
                                     <type>ear</type>
                                     <outputDirectory>${project.basedir}/deployment</outputDirectory>
                                     <destFileName>clusterbench-ee10.ear</destFileName>
@@ -85,4 +76,4 @@
             </plugin>
         </plugins>
     </build>
- </project>
+</project>
