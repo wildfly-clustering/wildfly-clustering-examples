@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.wildfly.clustering.examples</groupId>
         <artifactId>mod_cluster-with-tls</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>mod_cluster-with-tls-server</artifactId>
