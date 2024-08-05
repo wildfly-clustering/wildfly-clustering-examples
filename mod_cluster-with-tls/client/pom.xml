@@ -1,34 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.wildfly.clustering.examples</groupId>
         <artifactId>mod_cluster-with-tls</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.0.Final-SNAPSHOT</version>
     </parent>
 
-    <artifactId>client</artifactId>
+    <artifactId>mod_cluster-with-tls-client</artifactId>
     <packaging>jar</packaging>
 
-    <name>client</name>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- clusterbench libraries -->
-            <dependency>
-                <groupId>org.jboss.test</groupId>
-                <artifactId>clusterbench</artifactId>
-                <version>7.0.0.Final</version>
-                <type>pom</type>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <name>WildFly Clustering Examples: mod_cluster-with-tls-client</name>
 
     <dependencies>
         <!-- wildfly ejb client libraries -->
@@ -42,7 +23,6 @@
         <dependency>
             <groupId>org.jboss.test</groupId>
             <artifactId>clusterbench-ee10-ejb</artifactId>
-            <version>7.0.0.Final</version>
         </dependency>
     </dependencies>
 
@@ -57,7 +37,7 @@
                     <workingDirectory>${project.build.directory}/exec-working-directory</workingDirectory>
                     <arguments>
                         <argument>-classpath</argument>
-                        <classpath></classpath>
+                        <classpath />
                         <argument>org.wildfly.clustering.examples.RemoteEJBClient</argument>
                     </arguments>
                 </configuration>
