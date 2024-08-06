@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Copyright The WildFly Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
 # script for re-generating the keystores and truststores needed for SSL/TLS
 
 ## Create server keystore (tlsServer.keystore, serverKeySecret)
