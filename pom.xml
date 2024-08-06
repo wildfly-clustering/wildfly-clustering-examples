@@ -3,7 +3,7 @@
 
     <groupId>org.wildfly.clustering.examples</groupId>
     <artifactId>wildfly-clustering-examples-parent</artifactId>
-    <version>1.0.0.Final-SNAPSHOT</version>
+    <version>33.0.0.Final-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>WildFly Clustering Examples (parent)</name>
