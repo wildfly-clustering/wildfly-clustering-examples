@@ -68,7 +68,7 @@ public class RemoteEJBClient {
 
         /*
         // an alternative means to create the proxy
-        log.info("Creating SLSB using Wildfly naming lient API.");
+        log.info("Creating SLSB using WildFly naming lient API.");
         final Hashtable<String, String> jndiProperties = new Hashtable<>();
         jndiProperties.put(Context.INITIAL_CONTEXT_FACTORY, "org.wildfly.naming.client.WildFlyInitialContextFactory");
         jndiProperties.put(Context.PROVIDER_URL,"https://localhost:8443/wildfly-services");

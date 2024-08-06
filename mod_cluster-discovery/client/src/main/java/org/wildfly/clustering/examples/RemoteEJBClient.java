@@ -36,7 +36,6 @@ import org.jboss.test.clusterbench.ejb.stateless.RemoteStatelessSBImpl;
  * Additionally, The wildfly-config.xml file includes an EJB client configuration section specifying a URL pointing to
  * the load balancer and including its HTTP invoker context path prefix. This allows the EJB/HTTP discovery mechanism
  * to find out which deployments are accessible via the load balancer.
- *
  */
 public class RemoteEJBClient {
     private static final Logger log = Logger.getLogger(RemoteEJBClient.class);
@@ -69,7 +68,7 @@ public class RemoteEJBClient {
         /*
 
         // an alternative means to create the proxy
-        log.info("Creating SLSB using Wildfly Naming client API .");
+        log.info("Creating SLSB using WildFly Naming client API.");
         final Hashtable<String, String> jndiProperties = new Hashtable<>();
         jndiProperties.put(Context.INITIAL_CONTEXT_FACTORY, "org.wildfly.naming.client.WildFlyInitialContextFactory");
         jndiProperties.put(Context.PROVIDER_URL, "http://localhost:8080/wildfly-services");
