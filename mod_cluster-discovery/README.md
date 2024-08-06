@@ -4,11 +4,11 @@ The `mod_cluster-discovery` quickstart will focus on the ways in which mod_clust
 set of workers to be used for load balancing. 
 
 Mod_cluster can be configured for use with a variety of load balancers. The load balancer configuration we use for this 
-example will be based on the Wildfly server profile `standalone-load-balancer.xml` which integrates Undertow and 
+example will be based on the WildFly server profile `standalone-load-balancer.xml` which integrates Undertow and 
 mod_cluster to provide a feature-rich load balancer solution.
 
 For the latest documentation on mod_cluster, see the
-[Wildfly High Availablity Guide](https://docs.wildfly.org/30/High_Availability_Guide.html#load-balancing)
+[WildFly High Availability Guide](https://docs.wildfly.org/33/High_Availability_Guide.html#load-balancing)
 
 ## Introduction
 
@@ -30,8 +30,8 @@ In this quickstart, we shall explore the configuration requirements for both dyn
 ### Configuration of load balancer and workers
 
 As mentioned earlier, we will be using a load balancing setup where:
-* our load balancer will be a Wildfly server instance started with the `standalone-load-balancer.xml` server profile
-* our worker nodes will be Wildfly server instances started with the `standalone-ha.xml` profile
+* our load balancer will be a WildFly server instance started with the `standalone-load-balancer.xml` server profile
+* our worker nodes will be WildFly server instances started with the `standalone-ha.xml` profile
 
 The `standalone-load-balancer.xml` server profile uses dynamic, multicast-discovery by default, which provides a 
 discovery configuration which works out-of-the-box. The `standalone-ha.xml` server profile ensures that any deployments
@@ -69,7 +69,7 @@ With respect to previous discussion, we note the following:
 * the http-listener element `management` is where the load balancer listens for incoming MCMP traffic from workers; this listener uses the http protocol by default
 
 Not all attributes of the element `<mod-cluster/>` defined in the schema are shown here in this default configuration.
-For a full list of configurable elements and attributes, see the [modcluster filter model reference](https://docs.wildfly.org/30/wildscribe/subsystem/undertow/configuration/filter/mod-cluster/index.html)
+For a full list of configurable elements and attributes, see the [modcluster filter model reference](https://docs.wildfly.org/33/wildscribe/subsystem/undertow/configuration/filter/mod-cluster/index.html)
 
 #### Configuration of mod_cluster on the workers
 
@@ -89,7 +89,7 @@ For the purposes of our discussion, we note the following:
   traffic from the load balancer. In this case, the binary `ajp` protocol is used for communication between the load balancer and the workers
 
 Not all attributes of the modcluster subsystem defined in the schema are shown here. For a full list of configurable
-elements and attributes, see the [modcluster subsystem model reference](https://docs.wildfly.org/30/wildscribe/subsystem/modcluster/index.html)
+elements and attributes, see the [modcluster subsystem model reference](https://docs.wildfly.org/33/wildscribe/subsystem/modcluster/index.html)
 
 Now that we have a basic understanding of how mod_cluster works and how it is configured, we explore how dynamic 
 discovery works with mod_cluster as the default discovery mode.
@@ -100,21 +100,21 @@ In order to test the load balancer and its workers once configured, we need a sa
 worker nodes. 
 
 In what follows, we shall use the application [clusterbench](https://github.com/clusterbench/clusterbench), a J2EE 
-application tailored for testing J2EE application servers such as Wildfly and the clustering features they provide. 
+application tailored for testing J2EE application servers such as WildFly and the clustering features they provide. 
 
 Our aim here is not to test the features of the load balancer itself, but rather to demonstrate that, with discovery 
 so configured, a client can make invocations on a deployment via the load balancer and that we see the requests 
 balanced between worker nodes.
 
-### Setting up the Wildfly instances
+### Setting up the WildFly instances
 
-In what follows, we will install and configure three instances of Wildfly to represent the load balancer and two workers.
+In what follows, we will install and configure three instances of WildFly to represent the load balancer and two workers.
 These instances will be run on `localhost` using the loopback network `lo` for communication between instances.
 
 We refer to the instances as follows:
-* `BALANCER_HOME` is the directory containing the Wildfly installation to be used for the load balancer
-* `WORKER1_HOME` is the directory containing the Wildfly installation to be used for the first worker
-* `WORKER2_HOME` is the directory containing the Wildfly installation to be used for the second worker
+* `BALANCER_HOME` is the directory containing the WildFly installation to be used for the load balancer
+* `WORKER1_HOME` is the directory containing the WildFly installation to be used for the first worker
+* `WORKER2_HOME` is the directory containing the WildFly installation to be used for the second worker
 
 Additionally, we assume that a user called `quickstartUser` and a password called`quickstartPwd1!` is defined on each
 of the worker instances. This user and password combination will be used for authentication of the client application
@@ -126,7 +126,7 @@ Similarly, add the same user and password for WORKER2_HOME.
 
 ## Scenario I: mod_cluster with dynamic discovery
 
-As mentioned earlier, dynamic discovery is enabled by default when using the Wildfly standalone-load-balancer.xml server
+As mentioned earlier, dynamic discovery is enabled by default when using the WildFly standalone-load-balancer.xml server
 profile. This is to allow discovery to work out-of-the-box; in other words, with no additional configuration of the 
 load balancer or its workers.
 
@@ -147,7 +147,7 @@ In a new terminal, start the load-balancer instance using the standalone-load-ba
 ```shell
 $BALANCER_HOME/bin/standalone.sh -c standalone-load-balancer.xml -Djboss.node.name=balancer -Djboss.bind.address=localhost
 ```
-Here, we have provided an appropriate name for this Wildfly instance (`balancer`) as well as specified the domain name
+Here, we have provided an appropriate name for this WildFly instance (`balancer`) as well as specified the domain name
 of `localhost` for the bind address. 
 
 ### Starting the workers
@@ -156,7 +156,7 @@ First, in a new terminal, start the worker1 instance using the standalone-ha.xml
 ```shell
 $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker1 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=100
 ```
-As with the load balancer instance, we have provided an appropriate name for this Wildfly instance as well as specified
+As with the load balancer instance, we have provided an appropriate name for this WildFly instance as well as specified
 the domain name of `localhost` for the bind address. Additionally, because all three of the server instances are running
 on the same host, to avoid port conflicts, we need to additionally specify a socket binding port offset, 100 in this case.
 
@@ -243,7 +243,7 @@ this command should show the request being directed to the different worker node
 ### Conclusion
 
 We have seen that dynamic (multicast-based) discovery is enabled by default when using the standalone-load-balancer.xml 
-server profile of Wildfly. Once multicast is configured for the network over which the load balancer and workers
+server profile of WildFly. Once multicast is configured for the network over which the load balancer and workers
 communicate, discovery happens dynamically upon the load balancer and the workers being started.
 
 In the next section, we shall show the configuration changes required to adjust the discovery method from dynamic
@@ -257,7 +257,7 @@ with the load balancer, using the load balancer host:port provided.
 
 ### Re-configuring the load balancer for static discovery
 
-To configure the load-balancer, we provide a Wildfly CLI script `configure-loadbalancer.cli` which contains the CLI
+To configure the load-balancer, we provide a WildFly CLI script `configure-loadbalancer.cli` which contains the CLI
 commands for setting up static discovery on the load balancer. Review the comments in the CLI script to understand 
 the changes made. 
 
@@ -279,7 +279,7 @@ At this stage, the load balancer is now configured for static discovery and you 
 
 ### Re-configuring the workers for static discovery
 
-To configure the workers, we provide a Wildfly CLI script `configure-worker.cli` which contains the CLI
+To configure the workers, we provide a WildFly CLI script `configure-worker.cli` which contains the CLI
 commands for setting up static discovery on the worker nodes. Review the comments in the CLI script to understand
 the changes made.
 

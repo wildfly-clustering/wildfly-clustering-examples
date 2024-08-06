@@ -4,11 +4,11 @@ The `mod_cluster-with-tls` quickstart will demonstrate how to secure the communi
 when acting as a load balancer. 
 
 Mod_cluster can be configured for use with a variety of load balancers. The load balancer configuration we use for 
-this quickstart will be based on the Wildfly server profile `standalone-load-balancer.xml` which integrates Undertow 
+this quickstart will be based on the WildFly server profile `standalone-load-balancer.xml` which integrates Undertow 
 and mod_cluster to provide a feature-rich load balancer solution.
 
 For the latest documentation on mod_cluster, see the 
-[Wildfly High Availablity Guide](https://docs.wildfly.org/30/High_Availability_Guide.html#load-balancing)
+[WildFly High Availability Guide](https://docs.wildfly.org/33/High_Availability_Guide.html#load-balancing)
 
 ## Introduction
 
@@ -42,8 +42,8 @@ load balancer and the backend workers processing the client requests.
 ### Configuration of load balancer and workers
 
 As already mentioned, we will be using a load balancing setup where:
-* our load balancer will be a Wildfly server instance started with the `standalone-load-balancer.xml` server profile
-* our worker nodes will be Wildfly server instances started with the `standalone-ha.xml` profile
+* our load balancer will be a WildFly server instance started with the `standalone-load-balancer.xml` server profile
+* our worker nodes will be WildFly server instances started with the `standalone-ha.xml` profile
 
 The `standalone-load-balancer.xml` server profile uses multicast-discovery by default, which provides a configuration which works 
 out-of-the-box. The `standalone-ha.xml` server profile provides that any deployments on those workers will support 
@@ -80,7 +80,7 @@ With respect to previous discussion, we note the following:
 * the http-listener element `management` is where the load balancer listens for incoming MCMP traffic from workers; this listener (http, not https) is currently configured not to use TLS 
 
 Not all attributes of the element `<mod-cluster/>` defined in the schema are shown here in this default configuration. 
-For a full list of configurable elements and attributes, see the [modcluster filter model reference](https://docs.wildfly.org/30/wildscribe/subsystem/undertow/configuration/filter/mod-cluster/index.html)
+For a full list of configurable elements and attributes, see the [modcluster filter model reference](https://docs.wildfly.org/33/wildscribe/subsystem/undertow/configuration/filter/mod-cluster/index.html)
 
 #### Configuration of mod_cluster on the workers
 
@@ -105,7 +105,7 @@ traffic from the load balancer. In this case, the binary `ajp` protocol is used.
 > However, mod_cluster supports a variety of backend protocols, including ajp, http, http2 and https, among others.
 
 Not all attributes of the modcluster subsystem defined in the schema are shown here. For a full list of configurable
-elements and attributes, see the [modcluster subsystem model reference](https://docs.wildfly.org/30/wildscribe/subsystem/modcluster/index.html)
+elements and attributes, see the [modcluster subsystem model reference](https://docs.wildfly.org/33/wildscribe/subsystem/modcluster/index.html)
 
 Now that we have a basic understanding of how mod_cluster works and how it is configured, we return to the task of securing 
 mod_cluster with TLS.
@@ -116,21 +116,21 @@ In order to eventually test the load balancer and its workers once configured, w
 on the worker nodes.
 
 In what follows, we shall use the application [clusterbench](https://github.com/clusterbench/clusterbench), a J2EE
-application tailored for testing J2EE application servers such as Wildfly and the clustering features they provide.
+application tailored for testing J2EE application servers such as WildFly and the clustering features they provide.
 
 Our aim here is not to test the features of the load balancer itself, but rather to demonstrate that, with discovery
 so configured, a client can make invocations on a deployment via the load balancer and that we see the requests
 balanced between worker nodes.
 
-### Setting up the Wildfly instances
+### Setting up the WildFly instances
 
-In what follows, we will install and configure three instances of Wildfly to represent the load balancer and two workers
+In what follows, we will install and configure three instances of WildFly to represent the load balancer and two workers
 and run these three instances on `localhost` using the loopback network `lo` for communication between instances. 
 
 We refer to the instances as follows:
-* `BALANCER_HOME` is the directory containing the Wildfly installation to be used for the load balancer
-* `WORKER1_HOME` is the directory containing the Wildfly installation to be used for the first worker
-* `WORKER2_HOME` is the directory containing the Wildfly installation to be used for the second worker
+* `BALANCER_HOME` is the directory containing the WildFly installation to be used for the load balancer
+* `WORKER1_HOME` is the directory containing the WildFly installation to be used for the first worker
+* `WORKER2_HOME` is the directory containing the WildFly installation to be used for the second worker
 
 Additionally, we assume that a user called `quickstartUser` and a password called`quickstartPwd1!` is defined on each 
 of the worker instances. This user and password combination will be used for authentication of the client application
@@ -140,7 +140,7 @@ $WORKER1_HOME/bin/add-user.sh -a -u 'quickstartUser' -p 'quickstartPwd1!'
 ```
 Similarly, add the same user and password for WORKER2_HOME.
 
-As mentioned earlier, dynamic discovery is enabled by default when using the Wildfly standalone-load-balancer.xml
+As mentioned earlier, dynamic discovery is enabled by default when using the WildFly standalone-load-balancer.xml
 server profile. To use multicast advertisement, we need to make sure that multicast is enabled on our network of choice. 
 However, multicast is not enabled by default for the loopback interface `lo`. Use the following commands to enable
 multicast on the loopback interface:
@@ -158,7 +158,7 @@ ajp) are used across the communication pathways mentioned earlier.
 > the two workers, deploying clusterbench on the two workers and running the client application. THis is optional.
 > Instructions for performing these steps can be found in what follows.
 
-In the next sesion, we continue the discussion by describing the additional configuration required for encrypting 
+In the next session, we continue the discussion by describing the additional configuration required for encrypting 
 the communication pathways using TLS.
 
 ## Scenario: mod_cluster with TLS
@@ -172,7 +172,7 @@ endpoint is functioning as a client or as a server (i.e. initiating the communic
 
 Given that there are a number of configuration changes required, here we provide an overview of those changes:
 1. Create the keystore and truststore files to be used to allow TLS-based encryption across communication pathways 
-2. Copy those keystore and truststore files to their required locations in the Wildfly server installations $BALANCER, $WORKER1 and $WORKER2
+2. Copy those keystore and truststore files to their required locations in the WildFly server installations $BALANCER, $WORKER1 and $WORKER2
 3. Configure the load balancer for TLS:
    - in the Elytron subsystem:
      - set up a client SSLContext and a server SSLContext using the associated keystores and truststores
@@ -298,7 +298,7 @@ the server configuration changes required to enable TLS.
 
 ### Starting and configuring the load balancer
 
-To configure the load-balancer, we provide a Wildfly CLI script `configure-loadbalancer.cli` which contains the CLI
+To configure the load-balancer, we provide a WildFly CLI script `configure-loadbalancer.cli` which contains the CLI
 commands for setting up TLS on the load balancer. Review the CLI script and its comments to understand what configuration 
 changes are required on the load balancer. 
 
@@ -306,7 +306,7 @@ In a new terminal window, start the load-balancer instance using the standalone-
 ```shell
 $BALANCER_HOME/bin/standalone.sh -c standalone-load-balancer.xml -Djboss.node.name=balancer -Djboss.bind.address=localhost
 ```
-We have provided an appropriate name for this Wildfly instance (`balancer`) as well as specified the domain name
+We have provided an appropriate name for this WildFly instance (`balancer`) as well as specified the domain name
 of `localhost` for the bind address. In our case, this will cause any URLs used to open communication channels to use
 a domain name of `localhost` instead of 127.0.0.1, which will match the server certificate distinguished name
 `cn=localhost`. 
@@ -325,7 +325,7 @@ At this stage, the load balancer is now configured for TLS and you may shut the 
 
 ### Starting and configuring the workers
 
-To configure the workers, we provide a Wildfly CLI script `configure-worker.cli` which contains the CLI
+To configure the workers, we provide a WildFly CLI script `configure-worker.cli` which contains the CLI
 commands for setting up TLS on the worker nodes. Review the CLI script and its comments to understand what configuration
 changes are required on the workers.
 
@@ -333,7 +333,7 @@ In a new terminal window, start the worker1 instance using the standalone-ha.xml
 ```shell
 $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker1 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=100
 ```
-As with the load balancer instance, we have provided an appropriate name for this Wildfly instance as well as specified
+As with the load balancer instance, we have provided an appropriate name for this WildFly instance as well as specified
 the domain name of `localhost` for the bind address. Additionally, because all three of the server instances are running
 on the same host, to avoid port conflicts, we need to additionally specify a socket binding port offset, 100 in this case.
 
@@ -354,11 +354,11 @@ Now, in a new terminal window, start the worker2 instance using the standalone-h
 ```shell
 $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker2 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=200
 ```
-As with the load balancer instance, we have provided an appropriate name for this Wildfly instance as well as specified
+As with the load balancer instance, we have provided an appropriate name for this WildFly instance as well as specified
 the domain name of `localhost` for the bind address. Additionally, because all three of the server instances are running
 on the same host, to avoid port conflicts, we need to additionally specify a socket binding port offset, 200 in this case.
 
-With the server started, in a new terminak window, navigate to the $PROJECT_HOME directory and run the configuration 
+With the server started, in a new terminal window, navigate to the $PROJECT_HOME directory and run the configuration 
 script for the worker2 instance, using a controller port which has been adjusted for the port offset used to start 
 the server:
 ```shell
@@ -388,7 +388,7 @@ In a new terminal, start the load-balancer instance using the standalone-load-ba
 ```shell
 $BALANCER_HOME/bin/standalone.sh -c standalone-load-balancer.xml -Djboss.node.name=balancer -Djboss.bind.address=localhost
 ```
-Here, we have provided an appropriate name for this Wildfly instance (`balancer`) as well as specified the domain name
+Here, we have provided an appropriate name for this WildFly instance (`balancer`) as well as specified the domain name
 of `localhost` for the bind address.
 
 #### Starting the workers
@@ -397,7 +397,7 @@ First, in a new terminal, start the worker1 instance using the standalone-ha.xml
 ```shell
 $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker1 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=100
 ```
-As with the load balancer instance, we have provided an appropriate name for this Wildfly instance as well as specified
+As with the load balancer instance, we have provided an appropriate name for this WildFly instance as well as specified
 the domain name of `localhost` for the bind address. Additionally, because all three of the server instances are running
 on the same host, to avoid port conflicts, we need to additionally specify a socket binding port offset, 100 in this case.
 
@@ -505,7 +505,7 @@ that the client should connect to the load balancer using TLS. Additionally, the
 required whenever we use EJB with the HTTP transport; in other words, EJB/HTTP. THis context path allows Undertow 
 to correctly interpret the invocation as an EJB invocation (as opposed to an invocation on a servlet). For more 
 information on using the `<jboss-ejb-client/>` element to configure EJB client applications, see the 
-[Wildfly Client Configuration Guide, Section 3.2](https://docs.wildfly.org/30/Client_Guide.html#jboss-ejb-client)
+[WildFly Client Configuration Guide, Section 3.2](https://docs.wildfly.org/33/Client_Guide.html#jboss-ejb-client)
 
 The element `<http-client/>` of wildfly-config.xml similarly allows configuration of the EJB/HTTP transport used by the 
 client to connect to Undertow. In our example, we have:
@@ -572,13 +572,13 @@ and is the configuration section most relevant to our discussion. In our example
 </authentication-client>
 ```
 
-This XML snippet is divided up into two sections: an authentication section, where the usename and password that make up 
+This XML snippet is divided up into two sections: an authentication section, where the username and password that make up 
 the credentials that the client will present to the worker instances when authenticating, as well as the keystore, 
 trustsore and associated SSLContext the client will use when establishing the TLS-encrypted (https) connection from 
 the client to the load balancer. You will observe that the SSLContext permits specifying the TLS versions that the 
 client will offer to the server, ordered by preference. For more information on using the `<authentication-client/>` 
 element to configure EJB client applications, see the
-[Wildfly Client Configuration Guide, Section 3.1](https://docs.wildfly.org/30/Client_Guide.html#authentication-client)
+[WildFly Client Configuration Guide, Section 3.1](https://docs.wildfly.org/33/Client_Guide.html#authentication-client)
 
 #### Runing the application client
 
