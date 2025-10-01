@@ -18,7 +18,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <version.wildfly>33.0.0.Final</version.wildfly>
-        <version.org.wildfly.plugins.wildfly-maven-plugin>4.2.1.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
+        <version.org.wildfly.plugins.wildfly-maven-plugin>5.1.4.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
         <version.clusterbench>7.0.0.Final</version.clusterbench>
         <version.org.apache.maven.plugins.maven-dependency-plugin>3.6.0</version.org.apache.maven.plugins.maven-dependency-plugin>
         <version.org.apache.maven.plugins.maven-clean-plugin>3.3.2</version.org.apache.maven.plugins.maven-clean-plugin>
