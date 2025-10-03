@@ -19,7 +19,7 @@
     <dependencies>
         <!-- clusterbench ejb ear -->
         <dependency>
-            <groupId>org.jboss.test</groupId>
+            <groupId>org.wildfly.clustering.benchmark</groupId>
             <artifactId>clusterbench-ee10-ejb</artifactId>
         </dependency>
     </dependencies>
@@ -42,9 +42,9 @@
                             <skip>false</skip>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.jboss.test</groupId>
+                                    <groupId>org.wildfly.clustering.benchmark</groupId>
                                     <artifactId>clusterbench-ee10-ear</artifactId>
-                                    <version>${version.clusterbench}</version>
+                                    <version>${version.org.wildfly.clustering.benchmark}</version>
                                     <type>ear</type>
                                     <outputDirectory>${project.basedir}/deployment</outputDirectory>
                                     <destFileName>clusterbench-ee10.ear</destFileName>

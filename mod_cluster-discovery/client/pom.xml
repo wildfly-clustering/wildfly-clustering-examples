@@ -37,7 +37,7 @@
 
         <!-- clusterbench ejb libraries -->
         <dependency>
-            <groupId>org.jboss.test</groupId>
+            <groupId>org.wildfly.clustering.benchmark</groupId>
             <artifactId>clusterbench-ee10-ejb</artifactId>
         </dependency>
     </dependencies>
