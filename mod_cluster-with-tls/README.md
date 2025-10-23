@@ -100,7 +100,7 @@ For the purposes of our discussion, we note the following:
 * the listener attribute `ajp` refers to the Undertow listener on the worker that will be used for receiving application 
 traffic from the load balancer. In this case, the binary `ajp` protocol is used. 
 
-> {!NOTE]
+> [!NOTE]
 > The `ajp` protocol is a binary protocol used between the load balancer and its workers for performance reasons. 
 > However, mod_cluster supports a variety of backend protocols, including ajp, http, http2 and https, among others.
 
