@@ -20,7 +20,7 @@
         <version.wildfly>39.0.0.Final</version.wildfly>
         <version.org.wildfly.plugins.wildfly-maven-plugin>5.1.5.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
         <version.org.wildfly.clustering.benchmark>15.0.1.Final</version.org.wildfly.clustering.benchmark>
-        <version.org.apache.maven.plugins.maven-dependency-plugin>3.9.0</version.org.apache.maven.plugins.maven-dependency-plugin>
+        <version.org.apache.maven.plugins.maven-dependency-plugin>3.10.0</version.org.apache.maven.plugins.maven-dependency-plugin>
         <version.org.apache.maven.plugins.maven-clean-plugin>3.5.0</version.org.apache.maven.plugins.maven-clean-plugin>
     </properties>
 
