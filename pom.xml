@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <version.wildfly>39.0.0.Final</version.wildfly>
+        <version.wildfly>39.0.1.Final</version.wildfly>
         <version.org.wildfly.plugins.wildfly-maven-plugin>5.1.5.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
         <version.org.wildfly.clustering.benchmark>15.0.1.Final</version.org.wildfly.clustering.benchmark>
         <version.org.apache.maven.plugins.maven-dependency-plugin>3.10.0</version.org.apache.maven.plugins.maven-dependency-plugin>
