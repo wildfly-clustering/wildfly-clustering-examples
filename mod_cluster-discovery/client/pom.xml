@@ -21,7 +21,7 @@
     </properties>
 
     <dependencies>
-        <!-- wildfly ejb client libraries -->
+        <!-- WildFly EJB client libraries -->
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-ejb-client-bom</artifactId>

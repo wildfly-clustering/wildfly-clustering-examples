@@ -371,7 +371,7 @@ this command should show the request being directed to the different worker node
 
 ## Conclusion
 
-In this quickstart, we demonstrated the use of dynamic and static discovery when using Wildfy and its 
+In this quickstart, we demonstrated the use of dynamic and static discovery when using WildFly and its 
 standalone-load-balancer.xml server profile as a load balancer.
 
 
