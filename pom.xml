@@ -3,48 +3,45 @@
   ~ Copyright The WildFly Authors
   ~ SPDX-License-Identifier: Apache-2.0
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.wildfly.clustering.examples</groupId>
-    <artifactId>wildfly-clustering-examples-parent</artifactId>
-    <version>33.0.0.Final-SNAPSHOT</version>
-    <packaging>pom</packaging>
+	<parent>
+		<groupId>org.wildfly.clustering</groupId>
+		<artifactId>wildfly-clustering-parent</artifactId>
+		<version>12.0.0.CR6</version>
+	</parent>
 
-    <name>WildFly Clustering Examples (parent)</name>
+	<groupId>org.wildfly.clustering.examples</groupId>
+	<artifactId>wildfly-clustering-examples</artifactId>
+	<version>42.0.0.Final-SNAPSHOT</version>
+	<packaging>pom</packaging>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <version.wildfly>41.0.1.Final</version.wildfly>
-        <version.org.wildfly.plugins.wildfly-maven-plugin>6.0.1.Final</version.org.wildfly.plugins.wildfly-maven-plugin>
-        <version.org.wildfly.clustering.benchmark>18.0.1.Final</version.org.wildfly.clustering.benchmark>
-        <version.org.apache.maven.plugins.maven-dependency-plugin>3.11.0</version.org.apache.maven.plugins.maven-dependency-plugin>
-        <version.org.apache.maven.plugins.maven-clean-plugin>3.5.0</version.org.apache.maven.plugins.maven-clean-plugin>
-    </properties>
+	<name>${project.repository.name}: Modules</name>
 
-    <modules>
-        <module>mod_cluster-discovery</module>
-        <module>mod_cluster-with-tls</module>
-    </modules>
+	<properties>
+		<project.repository.name>${project.repository.organization.name} Examples</project.repository.name>
+	</properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-ee-with-tools</artifactId>
-                <scope>import</scope>
-                <type>pom</type>
-                <version>${version.wildfly}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.clustering.benchmark</groupId>
-                <artifactId>clusterbench-ee10-ejb</artifactId>
-                <type>jar</type>
-                <version>${version.org.wildfly.clustering.benchmark}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+	<modules>
+		<module>mod_cluster</module>
+	</modules>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.ec4j.maven</groupId>
+				<artifactId>editorconfig-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default-check</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>
