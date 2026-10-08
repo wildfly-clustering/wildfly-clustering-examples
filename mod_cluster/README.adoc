@@ -1,0 +1,6 @@
+= mod_cluster examples
+
+Set of examples demonstrating WildFly configured as a load balancer using mod_cluster:
+
+* link:discovery.md[Discovery]
+* link:tls.md[MCMP/TLS]
