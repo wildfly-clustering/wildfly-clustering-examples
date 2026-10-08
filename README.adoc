@@ -2,4 +2,6 @@
 
 Set of examples demonstrating various features of WildFly Clustering, including:
 
-* link:mod_cluster/README.md[mod_cluster]
+* link:mod_cluster/README.adoc[mod_cluster]
+** link:mod_cluster/discovery.md[Discovery]
+** link:mod_cluster/tls.md[TLS/MCMP]
