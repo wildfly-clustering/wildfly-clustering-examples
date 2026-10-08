@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server>
+	<featureManager>
+		<feature>localConnector-1.0</feature>
+		<feature>restConnector-2.0</feature>
+		<feature>pages-4.0</feature>
+		<feature>servlet-6.1</feature>
+		<feature>sessionCache-1.0</feature>
+	</featureManager>
+
+	<!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
+	<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${http.port}" httpsPort="${https.port}"/>
+
+	<httpSessionCache cacheManagerRef="sessionCacheManager"/>
+
+	<cacheManager id="sessionCacheManager">
+		<cachingProvider jCacheLibraryRef="JCacheLib">
+			<properties hazelcast.config.location="file:${server.config.dir}/hazelcast-config.xml"/>
+		</cachingProvider>
+	</cacheManager>
+
+	<library id="JCacheLib">
+		<file name="${shared.resource.dir}/hazelcast.jar"/>
+	</library>
+
+	<!-- Automatically expand WAR files and EAR files -->
+	<applicationManager updateTrigger="mbean"/>
+
+	<ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" sslProtocol="TLSv1.3" trustDefaultCerts="true" verifyHostname="false"/>
+
+	<quickStartSecurity userName="admin" userPassword="admin"/>
+
+	<remoteFileAccess>
+		<writeDir>${server.config.dir}/dropins</writeDir>
+	</remoteFileAccess>
+</server>
