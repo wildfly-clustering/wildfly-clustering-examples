@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Copyright The WildFly Authors
+	SPDX-License-Identifier: Apache-2.0
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xmlns:sec="http://www.springframework.org/schema/security" xmlns:ispn="http://www.infinispan.org/schemas/spring"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.infinispan.org/schemas/spring https://infinispan.org/schemas/infinispan-spring.xsd">
+
+	<context:annotation-config/>
+
+	<!-- We cannot use org.infinispan.spring.remote.session.configuration.InfinispanRemoteHttpSessionConfiguration here -->
+	<!-- This bean requires configuration of its cacheName, but does not expose a mechanism to configure it (other than via annotation) -->
+	<bean id="httpSession" class="org.springframework.session.config.annotation.web.http.SpringHttpSessionConfiguration"/>
+	<bean id="springCacheManager" class="org.infinispan.spring.remote.provider.SpringRemoteCacheManagerFactoryBean">
+		<property name="ConfigurationPropertiesFileLocation"><value>/WEB-INF/hotrod-client.properties</value></property>
+	</bean>
+	<bean id="springSessionRepository" class="org.infinispan.spring.remote.session.InfinispanRemoteSessionRepository">
+		<constructor-arg>
+			<bean factory-bean="springCacheManager" factory-method="getCache">
+				<constructor-arg><value>sessions</value></constructor-arg>
+			</bean>
+		</constructor-arg>
+	</bean>
+</beans>

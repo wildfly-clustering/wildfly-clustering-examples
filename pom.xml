@@ -25,6 +25,7 @@
 
 	<modules>
 		<module>mod_cluster</module>
+		<module>servlet</module>
 	</modules>
 
 	<build>
