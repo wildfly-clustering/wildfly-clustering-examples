@@ -1,10 +1,10 @@
 # mod_cluster-discovery: Exploring discovery options with mod_cluster
 
-The `mod_cluster-discovery` quickstart will focus on the ways in which mod_cluster can be configured to discover the 
-set of workers to be used for load balancing. 
+The `mod_cluster-discovery` quickstart will focus on the ways in which mod_cluster can be configured to discover the
+set of workers to be used for load balancing.
 
-Mod_cluster can be configured for use with a variety of load balancers. The load balancer configuration we use for this 
-example will be based on the WildFly server profile `standalone-load-balancer.xml` which integrates Undertow and 
+Mod_cluster can be configured for use with a variety of load balancers. The load balancer configuration we use for this
+example will be based on the WildFly server profile `standalone-load-balancer.xml` which integrates Undertow and
 mod_cluster to provide a feature-rich load balancer solution.
 
 For the latest documentation on mod_cluster, see the
@@ -17,12 +17,12 @@ to configuration discussion which follows.
 
 ### Key features of mod_cluster
 
-Unlike most load balancers, in which the relationship between the load balancer and its workers is configured statically 
+Unlike most load balancers, in which the relationship between the load balancer and its workers is configured statically
 by configuration files on the load balancer itself, mod_cluster detects its workers dynamically, by a process we call
 discovery. Discovery can be multicast-based (the default), or statically configured on the workers.
 
-Additionally, mod_cluster supports communication between workers and the load balancer via the mod_cluster Management 
-Protocol (MCMP) which permits workers to register with the load balancer as well as inform the load balancer of 
+Additionally, mod_cluster supports communication between workers and the load balancer via the mod_cluster Management
+Protocol (MCMP) which permits workers to register with the load balancer as well as inform the load balancer of
 changing circumstances on the worker, such as the status of deployments and processing load levels.
 
 In this quickstart, we shall explore the configuration requirements for both dynamic and static discovery of workers.
@@ -33,33 +33,34 @@ As mentioned earlier, we will be using a load balancing setup where:
 * our load balancer will be a WildFly server instance started with the `standalone-load-balancer.xml` server profile
 * our worker nodes will be WildFly server instances started with the `standalone-ha.xml` profile
 
-The `standalone-load-balancer.xml` server profile uses dynamic, multicast-discovery by default, which provides a 
+The `standalone-load-balancer.xml` server profile uses dynamic, multicast-discovery by default, which provides a
 discovery configuration which works out-of-the-box. The `standalone-ha.xml` server profile ensures that any deployments
 on those workers will support the clustering features of failover and load-balancing.
 
-Load balancing with mod_cluster supports feature configuration on both the load balancer node and the worker nodes. 
+Load balancing with mod_cluster supports feature configuration on both the load balancer node and the worker nodes.
 In the next section, we review the configuration options relevant to discovery.
 
 #### Configuration of mod_cluster on the load balancer
 
-When using the `standalone-load-balancer.xml` server profile, mod_cluster is implemented as an Undertow filter, named 
+When using the `standalone-load-balancer.xml` server profile, mod_cluster is implemented as an Undertow filter, named
 mod-cluster, with the following default configuration in the Undertow subsystem:
 ```xml
-<subsystem xmlns="urn:jboss:domain:undertow:14.0" default-virtual-host="default-host" default-servlet-container="default" default-server="default-server" statistics-enabled="${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}}">     <byte-buffer-pool name="default"/>
-    <buffer-cache name="default"/>
-    <server name="default-server">
-        <http-listener name="default" socket-binding="http" redirect-socket="https" enable-http2="true"/>
-        <http-listener name="management" socket-binding="mcmp-management" enable-http2="true"/>
-        <host name="default-host" alias="localhost">
-            <filter-ref name="load-balancer"/>
-        </host>
-    </server>
-    <servlet-container name="default"/>
-    <filters>
-        <mod-cluster name="load-balancer" management-socket-binding="mcmp-management" advertise-socket-binding="modcluster" enable-http2="true" max-retries="3">
-            <single-affinity/>
-        </mod-cluster>
-    </filters>
+<subsystem xmlns="urn:jboss:domain:undertow:14.0" default-virtual-host="default-host" default-servlet-container="default" default-server="default-server" statistics-enabled="${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}}">
+	<byte-buffer-pool name="default"/>
+	<buffer-cache name="default"/>
+	<server name="default-server">
+		<http-listener name="default" socket-binding="http" redirect-socket="https" enable-http2="true"/>
+		<http-listener name="management" socket-binding="mcmp-management" enable-http2="true"/>
+		<host name="default-host" alias="localhost">
+			<filter-ref name="load-balancer"/>
+		</host>
+	</server>
+	<servlet-container name="default"/>
+	<filters>
+		<mod-cluster name="load-balancer" management-socket-binding="mcmp-management" advertise-socket-binding="modcluster" enable-http2="true" max-retries="3">
+			<single-affinity/>
+		</mod-cluster>
+	</filters>
 </subsystem>
 ```
 With respect to previous discussion, we note the following:
@@ -76,11 +77,11 @@ For a full list of configurable elements and attributes, see the [modcluster fil
 On the workers, the key configuration element is the modcluster subsystem, with the default configuration shown below:
 ```xml
 <subsystem xmlns="urn:jboss:domain:modcluster:6.0">
-    <proxy name="default" advertise-socket="modcluster" listener="ajp">
-        <dynamic-load-provider>
-            <load-metric type="cpu"/>
-        </dynamic-load-provider>
-    </proxy>
+	<proxy name="default" advertise-socket="modcluster" listener="ajp">
+		<dynamic-load-provider>
+			<load-metric type="cpu"/>
+		</dynamic-load-provider>
+	</proxy>
 </subsystem>
 ```
 For the purposes of our discussion, we note the following:
@@ -91,19 +92,19 @@ For the purposes of our discussion, we note the following:
 Not all attributes of the modcluster subsystem defined in the schema are shown here. For a full list of configurable
 elements and attributes, see the [modcluster subsystem model reference](https://docs.wildfly.org/33/wildscribe/subsystem/modcluster/index.html)
 
-Now that we have a basic understanding of how mod_cluster works and how it is configured, we explore how dynamic 
+Now that we have a basic understanding of how mod_cluster works and how it is configured, we explore how dynamic
 discovery works with mod_cluster as the default discovery mode.
 
 ### The sample application
 
-In order to test the load balancer and its workers once configured, we need a sample application to deploy on the 
-worker nodes. 
+In order to test the load balancer and its workers once configured, we need a sample application to deploy on the
+worker nodes.
 
-In what follows, we shall use the application [clusterbench](https://github.com/clusterbench/clusterbench), a J2EE 
-application tailored for testing J2EE application servers such as WildFly and the clustering features they provide. 
+In what follows, we shall use the application [clusterbench](https://github.com/clusterbench/clusterbench), a Jakarta Enterprise Bean
+application tailored for testing Jakarta Enterprise application servers such as WildFly and the clustering features they provide.
 
-Our aim here is not to test the features of the load balancer itself, but rather to demonstrate that, with discovery 
-so configured, a client can make invocations on a deployment via the load balancer and that we see the requests 
+Our aim here is not to test the features of the load balancer itself, but rather to demonstrate that, with discovery
+so configured, a client can make invocations on a deployment via the load balancer and that we see the requests
 balanced between worker nodes.
 
 ### Setting up the WildFly instances
@@ -127,12 +128,12 @@ Similarly, add the same user and password for WORKER2_HOME.
 ## Scenario I: mod_cluster with dynamic discovery
 
 As mentioned earlier, dynamic discovery is enabled by default when using the WildFly standalone-load-balancer.xml server
-profile. This is to allow discovery to work out-of-the-box; in other words, with no additional configuration of the 
+profile. This is to allow discovery to work out-of-the-box; in other words, with no additional configuration of the
 load balancer or its workers.
 
 ### Setting up multicast for the loopback interface
 
-To use multicast advertisement, we need to make sure that multicast is enabled on our network of choice. However, 
+To use multicast advertisement, we need to make sure that multicast is enabled on our network of choice. However,
 multicast is not enabled by default for the loopback interface `lo`. Use the following commands to enable multicast
 on the loopback interface:
 ```shell
@@ -148,7 +149,7 @@ In a new terminal, start the load-balancer instance using the standalone-load-ba
 $BALANCER_HOME/bin/standalone.sh -c standalone-load-balancer.xml -Djboss.node.name=balancer -Djboss.bind.address=localhost
 ```
 Here, we have provided an appropriate name for this WildFly instance (`balancer`) as well as specified the domain name
-of `localhost` for the bind address. 
+of `localhost` for the bind address.
 
 ### Starting the workers
 
@@ -172,8 +173,8 @@ Now, in a second new terminal, start the worker2 instance using the standalone-h
 ```shell
 $WORKER2_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker2 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=200
 ```
-As before, we provide an appropriate name for this instance as well as a port offset of 200 to avoid port conflicts with 
-the load balancer and worker1. 
+As before, we provide an appropriate name for this instance as well as a port offset of 200 to avoid port conflicts with
+the load balancer and worker1.
 
 After a few seconds, you should see output in the load balancer terminal window indicating that worker2 has been
 successfully registered with the load balancer:
@@ -181,43 +182,39 @@ successfully registered with the load balancer:
 13:44:20,172 INFO  [io.undertow] (default task-1) UT005053: Registering node worker2 connection: ajp://127.0.0.1:8209/?#
 13:44:20,174 INFO  [io.undertow] (default task-1) UT005045: Registering context /, for node worker2
 13:44:20,175 INFO  [io.undertow] (default task-1) UT005045: Registering context /wildfly-services, for node worker2
-
-``````
+```
 
 Under the covers, here is what happened:
 * the load balancer instance started and began advertising the host:port combination for its MCMP management address
-* the worker instances started and began listening for multicast advertisements from the load balancer. 
+* the worker instances started and began listening for multicast advertisements from the load balancer.
   Upon receipt of the host:port of the load balancers management interface, each worker used MCMP messages to register
   themselves with the load balancer.
 
-At this stage, the load balancer is started, the two worker nodes are started and registered with the load balancer, and 
-we are ready to deploy our test application.  
+At this stage, the load balancer is started, the two worker nodes are started and registered with the load balancer, and
+we are ready to deploy our test application.
 
 ### Deploy and run the sample application
 
-As part of the project build process, the clusterbench jar was downloaded into $PROJECT_HOME/server/deployment and 
-the wildfly-maven-plugin has been configured to point to this deployement.
-
-To deploy clusterbench on worker1, open a new terminal, navigate to the $PROJECT_HOME/server and run the command:
+To deploy clusterbench on worker1, open a new terminal, navigate to the $PROJECT_HOME and run the command:
 ```shell
-mvn wildfly:deploy -Dwildfly.hostname=localhost -Dwildfly.port=10090
+mvn deploy -Dwildfly.port=10090
 ```
 In the terminal window for worker1, you should see that the deployment was successfully deployed on worker1. Also, in
-the terminal window for the load balancer, you should see that several new `context`s have been registered on the load 
+the terminal window for the load balancer, you should see that several new `context`s have been registered on the load
 balancer for worker1:
 ```shell
 14:07:58,069 INFO  [io.undertow] (default task-1) UT005045: Registering context /clusterbench-granular, for node worker1
 14:07:58,408 INFO  [io.undertow] (default task-1) UT005045: Registering context /clusterbench-passivating, for node worker1
 14:07:58,410 INFO  [io.undertow] (default task-1) UT005045: Registering context /clusterbench, for node worker1
 ``````
-In mod_cluster terms, a context represents the context path of a deployment. The worker worker1 has registered three 
-new contexts on the load balancer, each represeting a deployment on worker1. If the deployment were to be removed, 
+In mod_cluster terms, a context represents the context path of a deployment. The worker worker1 has registered three
+new contexts on the load balancer, each representing a deployment on worker1. If the deployment were to be removed,
 the context paths would be removed from the load balancer.
 
-To deploy clusterbench on worker2, open a new terminal, navigate to the $PROJECT_HOME/server directory and run the 
+To deploy clusterbench on worker2, open a new terminal, navigate to the $PROJECT_HOME directory and run the
 command:
 ```shell
-mvn wildfly:deploy -Dwildfly.hostname=localhost -Dwildfly.port=10190
+mvn deploy -Dwildfly.port=10190
 ```
 In the terminal window for worker2, you should see that the deployment was successfully deployed on worker2. Also, in
 the terminal window for the load balancer, you should see that several new `context`s have been registered on the load
@@ -227,22 +224,22 @@ balancer for worker2:
 14:08:25,459 INFO  [io.undertow] (default task-1) UT005045: Registering context /clusterbench-passivating, for node worker2
 14:08:25,461 INFO  [io.undertow] (default task-1) UT005045: Registering context /clusterbench, for node worker2
 ``````
-The sample application clusterbench is now deployed on both workers. We can test the operation of the load balancer 
-by invoing the sample application client. To execute the client, open a new terminal window, navigate to the 
-$PROJECT_HOME/client directory and run the command:
+The sample application clusterbench is now deployed on both workers. We can test the operation of the load balancer
+by invoing the sample application client. To execute the client, open a new terminal window, navigate to the
+$PROJECT_HOME directory and run the command:
 ```shell
-mvn exec:exec 
+mvn exec:java
 ```
 You should see the response
 ```shell
 Invoking method getNodeName(): result = <node>
 ```
-where node takes the value worker1 or worker2,depending on which worker the invocation landed on. Repeatedly executing
+where node takes the value worker1 or worker2, depending on which worker the invocation landed on. Repeatedly executing
 this command should show the request being directed to the different worker nodes.
 
 ### Conclusion
 
-We have seen that dynamic (multicast-based) discovery is enabled by default when using the standalone-load-balancer.xml 
+We have seen that dynamic (multicast-based) discovery is enabled by default when using the standalone-load-balancer.xml
 server profile of WildFly. Once multicast is configured for the network over which the load balancer and workers
 communicate, discovery happens dynamically upon the load balancer and the workers being started.
 
@@ -257,9 +254,9 @@ with the load balancer, using the load balancer host:port provided.
 
 ### Re-configuring the load balancer for static discovery
 
-To configure the load-balancer, we provide a WildFly CLI script `configure-loadbalancer.cli` which contains the CLI
-commands for setting up static discovery on the load balancer. Review the comments in the CLI script to understand 
-the changes made. 
+To configure the load-balancer, we provide a WildFly CLI script `discovery/configure-loadbalancer.cli` which contains the CLI
+commands for setting up static discovery on the load balancer. Review the comments in the CLI script to understand
+the changes made.
 
 Now, start the load-balancer instance using the load-balancer.xml server profile:
 ```shell
@@ -268,7 +265,7 @@ $BALANCER_HOME/bin/standalone.sh -c load-balancer.xml -Djboss.node.name=balancer
 
 With the server started, run the configuration script for the loadbalancer instance:
 ```shell
-$BALANCER_HOME/bin/jboss-cli.sh --connect --controller=localhost:9990 --file=./configure-loadbalancer.cli 
+$BALANCER_HOME/bin/jboss-cli.sh --connect --controller=localhost:9990 --file=./discovery/configure-loadbalancer.cli
 ```
 You should see the following output from the execution of the CLI script:
 ```shell
@@ -279,7 +276,7 @@ At this stage, the load balancer is now configured for static discovery and you 
 
 ### Re-configuring the workers for static discovery
 
-To configure the workers, we provide a WildFly CLI script `configure-worker.cli` which contains the CLI
+To configure the workers, we provide a WildFly CLI script `discovery/configure-worker.cli` which contains the CLI
 commands for setting up static discovery on the worker nodes. Review the comments in the CLI script to understand
 the changes made.
 
@@ -291,7 +288,7 @@ $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker1 -
 With the server started, run the configuration script for the worker1 instance, using a controller port which has been
 adjusted for the port offset used to start the server:
 ```shell
-$WORKER1_HOME/bin/jboss-cli.sh --connect --controller=localhost:10090 --file=./configure-worker.cli 
+$WORKER1_HOME/bin/jboss-cli.sh --connect --controller=localhost:10090 --file=./discovery/configure-worker.cli
 ```
 You should see the following output from the execution of the CLI script:
 ```shell
@@ -308,7 +305,7 @@ $WORKER2_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker2 -
 With the server started, run the configuration script for the worker2 instance, using a controller port which has been
 adjusted for the port offset used to start the server:
 ```shell
-$WORKER1_HOME/bin/jboss-cli.sh --connect --controller=localhost:10190 --file=./configure-worker.cli 
+$WORKER1_HOME/bin/jboss-cli.sh --connect --controller=localhost:10190 --file=./discovery/configure-worker.cli
 ```
 You should see the following output from the execution of the CLI script:
 ```shell
@@ -317,7 +314,7 @@ process-state:reload-required
 ``````
 At this stage, the worker2 is now configured for static discovery and you may shut the worker2 instance down.
 
-### Restarting the load balancer/workers setup 
+### Restarting the load balancer/workers setup
 
 At this point, you may now restart the newly configured load balancer and the two worker nodes to verify that our
 switch to static discovery works as expected.
@@ -326,14 +323,14 @@ First, start the load-balancer instance using the load-balancer.xml server profi
 ```shell
 $BALANCER_HOME/bin/standalone.sh -c load-balancer.xml -Djboss.node.name=balancer -Djboss.bind.address=localhost
 ```
-You should see the usual server startup messages in the load balancer terminal window. Now start the first worker 
+You should see the usual server startup messages in the load balancer terminal window. Now start the first worker
 instance worker1 using the standalone-ha.xml
 server profile:
 ```shell
 $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker1 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=100
 ```
-You should see the usual server startup messages in the worker1 terminal window. After a few seconds, in the load 
-balancer terminal window, you should see messages indicating that worker1 has now successfully registered itself 
+You should see the usual server startup messages in the worker1 terminal window. After a few seconds, in the load
+balancer terminal window, you should see messages indicating that worker1 has now successfully registered itself
 with the load balancer:
 ```shell
 14:39:28,848 INFO  [io.undertow] (default task-1) UT005053: Registering node worker1, connection: ajp://localhost:8109/?#
@@ -343,24 +340,24 @@ with the load balancer:
 14:39:39,026 INFO  [io.undertow] (default task-1) UT005045: Registering context /, for node worker1
 14:39:39,029 INFO  [io.undertow] (default task-2) UT005045: Registering context /wildfly-services, for node worker1
 ```
-As we deployed clusterbench-ee10.ear on the server instance worker1, its deployments are again active and we see that 
+As we deployed clusterbench-ee10.ear on the server instance worker1, its deployments are again active and we see that
 they are likewise registered with the load balancer.
 
 Now start the second worker instance worker2 using the standalone-ha.xml server profile:
 ```shell
 $WORKER1_HOME/bin/standalone.sh -c standalone-ha.xml -Djboss.node.name=worker1 -Djboss.bind.address=localhost -Djboss.socket.binding.port-offset=100
 ```
-You should see the usual server startup messages in the worker2 terminal window. As before, after a few seconds, in the 
-load balancer terminal window, you should see messages indicating that worker2 has now successfully registered itself 
+You should see the usual server startup messages in the worker2 terminal window. As before, after a few seconds, in the
+load balancer terminal window, you should see messages indicating that worker2 has now successfully registered itself
 with the load balancer.
 
 ### Running the sample application
 
-As before, we can test the operation of the load balancer and workers using static discovery by invoing the sample 
-application client. To execute the client, open a new terminal window, navigate to the $PROJECT_HOME/client directory 
+As before, we can test the operation of the load balancer and workers using static discovery by invoing the sample
+application client. To execute the client, open a new terminal window, navigate to the $PROJECT_HOME directory
 and run the command:
 ```shell
-mvn exec:exec 
+mvn exec:java
 ```
 You should see the response
 ```shell
@@ -371,7 +368,5 @@ this command should show the request being directed to the different worker node
 
 ## Conclusion
 
-In this quickstart, we demonstrated the use of dynamic and static discovery when using WildFly and its 
+In this quickstart, we demonstrated the use of dynamic and static discovery when using WildFly and its
 standalone-load-balancer.xml server profile as a load balancer.
-
-
