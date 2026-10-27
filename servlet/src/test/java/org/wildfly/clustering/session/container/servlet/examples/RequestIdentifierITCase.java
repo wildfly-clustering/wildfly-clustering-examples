@@ -78,7 +78,7 @@ public class RequestIdentifierITCase extends AbstractITCase<Class<? extends Http
 	enum Filter implements Supplier<Class<? extends HttpFilter>> {
 		NON_ATOMIC(NoMutexRequestIdentifierFilter.class),
 		SESSION_MUTEX(SessionMutexRequestIdentifierFilter.class),
-		SESSION_IDENTIFIER_MUTEX(SessionIdentifierMutexRequestIdentifierFilter.class),
+		SESSION_ID_MUTEX(SessionIdentifierMutexRequestIdentifierFilter.class),
 		SESSION_ATTRIBUTE_MUTEX(SessionAttributeMutexRequestIdentifierFilter.class),
 		ATOMIC(AtomicIntegerRequestIdentifierFilter.class),
 		ATOMIC_RESET(ResetAtomicIntegerRequestIdentifierFilter.class),

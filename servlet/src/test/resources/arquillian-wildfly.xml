@@ -47,7 +47,7 @@
 			<configuration>
 				<property name="username">admin</property>
 				<property name="password">admin</property>
-				<property name="portOffset">2</property>
+				<property name="portOffset">3</property>
 				<property name="port">${http.port.4}</property>
 				<property name="managementPort">${management.port.4}</property>
 			</configuration>

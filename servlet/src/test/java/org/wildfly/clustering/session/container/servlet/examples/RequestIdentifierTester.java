@@ -181,22 +181,24 @@ public class RequestIdentifierTester implements Tester {
 			});
 		}
 
-		List<Integer> lostSessions = new ArrayList<>(this.clients.size());
-		List<Long> lostAttributes = new ArrayList<>(this.clients.size());
-		List<Long> dirtyReads = new ArrayList<>(this.clients.size());
 		List<Duration> durations = new ArrayList<>(this.clients.size());
+		List<Integer> lostSessions = new ArrayList<>(this.clients.size());
+		List<Long> lostSessionAttributes = new ArrayList<>(this.clients.size());
+		List<Long> dirtyReads = new ArrayList<>(this.clients.size());
 		for (Map.Entry<Map<String, Queue<Long>>, CompletableFuture<Duration>> futureRequestIdsPerSession : futureResults) {
 			durations.add(futureRequestIdsPerSession.getValue().join());
 			Map<String, Queue<Long>> requestIdsPerSession = futureRequestIdsPerSession.getKey();
 			// There should only be one entry - anything more indicates lost sessions
 			lostSessions.add(requestIdsPerSession.size() - 1);
 			// There should only be one initial id in each queue - anything more indicates a lost session attribute
-			lostAttributes.add(requestIdsPerSession.values().stream().mapToLong(queue -> queue.stream().filter(Long.valueOf(RequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER.longValue())::equals).count() - 1).sum());
+			lostSessionAttributes.add(requestIdsPerSession.values().stream().mapToLong(queue -> queue.stream().filter(Long.valueOf(RequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER.longValue())::equals).count() - 1).sum());
 			// Duplicate identifiers indicate a dirty read
 			dirtyReads.add(requestIdsPerSession.values().stream().mapToLong(queue -> queue.size() - queue.stream().distinct().count()).sum());
 		}
-		Collections.sort(dirtyReads);
 		Collections.sort(durations);
+		Collections.sort(lostSessions);
+		Collections.sort(lostSessionAttributes);
+		Collections.sort(dirtyReads);
 
 		List<List<CompletableFuture<Long>>> futureIds = new ArrayList<>(uris.size());
 		for (URI uri : uris) {
@@ -230,7 +232,7 @@ public class RequestIdentifierTester implements Tester {
 		}
 
 		System.out.println("****************************************************************");
-		System.out.println("Test duration:");
+		System.out.println(String.format("Execution time:"));
 		if (this.clients.size() > 1) {
 			System.out.println("\t   Mean: " + (durations.stream().reduce(Duration::plus).orElse(Duration.ZERO).dividedBy(this.clients.size())));
 			System.out.println("\t Median: " + durations.get(this.clients.size() / 2));
@@ -250,12 +252,12 @@ public class RequestIdentifierTester implements Tester {
 		}
 		System.out.println("Lost session attributes:");
 		if (this.clients.size() > 1) {
-			System.out.println("\t   Mean: " + (lostAttributes.stream().mapToLong(Long::longValue).sum() / this.clients.size()));
-			System.out.println("\t Median: " + lostAttributes.get(this.clients.size() / 2));
-			System.out.println("\tMinimum: " + lostAttributes.get(0));
-			System.out.println("\tMaximum: " + lostAttributes.get(this.clients.size() - 1));
+			System.out.println("\t   Mean: " + (lostSessionAttributes.stream().mapToLong(Long::longValue).sum() / this.clients.size()));
+			System.out.println("\t Median: " + lostSessionAttributes.get(this.clients.size() / 2));
+			System.out.println("\tMinimum: " + lostSessionAttributes.get(0));
+			System.out.println("\tMaximum: " + lostSessionAttributes.get(this.clients.size() - 1));
 		} else {
-			System.out.println("\t" + lostAttributes.get(0));
+			System.out.println("\t" + lostSessionAttributes.get(0));
 		}
 		System.out.println(String.format("Dirty reads (out of %d):", this.requests));
 		if (this.clients.size() > 1) {

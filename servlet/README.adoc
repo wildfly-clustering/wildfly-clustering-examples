@@ -73,7 +73,7 @@ The exception is WildFly, which always assumes that a given session attribute is
 +
 ATOMIC_RESET:::
 +
-Same as ATOMIC, but adds a redundant call to `HttpSession.setAttribute(...)` after incrementing the AtomicInteger, to accommodate distributed containers that require such semantics.
+Same as ATOMIC, but adds an innocuous call to `HttpSession.setAttribute(...)` after incrementing the AtomicInteger, to accommodate distributed containers that require such semantics.
 This implementation should be portable to any distributed container.
 
 test.servers=#::
@@ -118,11 +118,11 @@ Has no effect if `test.servers=1`
 +
 e.g.
 +
-`test.failures=0.01` means that approximately 1 out of every 100 requests will be routed to (and subsequently stick to) a random server.
+`test.failover-ratio=0.01` means that approximately 1 out of every 100 requests will be routed to (and subsequently stick to) a random server.
 +
-`test.failures=0.0` means that no request will be routed to a random server, implying perfect stickiness.
+`test.failover-ratio=0.0` means that no request will be routed to a random server, implying perfect stickiness.
 +
-`test.failures=1.0` means that every request will be routed to a random server, implying no stickiness.
+`test.failover-ratio=1.0` means that every request will be routed to a random server, implying no stickiness.
 
 === Examples
 
