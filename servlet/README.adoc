@@ -37,7 +37,7 @@ N.B. glassfish and payara containers are not yet functional.
 +
 Please feel free to propose additional container options or to suggest configuration improvements for existing containers via pull request.
 
-test.spring=hazelcast|infinispan|redis::
+test.spring=hazelcast|infinispan/embedded|infinispan/remote|redis::
 When specified, the web application will be instrumented to use Spring Session with the specified session repository implementation, overriding the configured container's default session management.
 
 test.filter=NON_ATOMIC|SESSION_MUTEX|SESSION_ID_MUTEX|SESSION_ATTRIBUTE_MUTEX|ATOMIC|ATOMIC_RESET::

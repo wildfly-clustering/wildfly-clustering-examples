@@ -78,7 +78,7 @@
 			<dependency>
 				<groupId>org.infinispan</groupId>
 				<artifactId>infinispan-bom</artifactId>
-				<version>16.2.3</version>
+				<version>16.3.1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -408,11 +408,26 @@
 			</dependencies>
 		</profile>
 		<profile>
-			<id>infinispan</id>
+			<id>infinispan-embedded</id>
 			<activation>
 				<property>
 					<name>test.spring</name>
-					<value>infinispan</value>
+					<value>infinispan/embedded</value>
+				</property>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.infinispan</groupId>
+					<artifactId>infinispan-spring7-embedded</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>infinispan-remote</id>
+			<activation>
+				<property>
+					<name>test.spring</name>
+					<value>infinispan/remote</value>
 				</property>
 			</activation>
 			<properties>
