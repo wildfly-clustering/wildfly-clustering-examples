@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Copyright The WildFly Authors
+	SPDX-License-Identifier: Apache-2.0
+-->
+<arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+	<extension qualifier="OCI">
+		<property name="oci:image">tomcat:latest</property>
+		<property name="oci:network-mode">host</property>
+		<property name="oci:start-message-pattern">.*\QServer startup in \E.*</property>
+		<property name="ref:HTTP_PORT">bindHttpPort</property>
+		<property name="ref:JMX_PORT">jmxPort</property>
+		<property name="env:JAVA_OPTS">-Dhttp.port=$HTTP_PORT -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</property>
+		<property name="file:${project.basedir}/src/test/resources/${test.container}">/usr/local/tomcat</property>
+	</extension>
+	<group qualifier="tomcat" default="true">
+		<container qualifier="server-1" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">${http.port.1}</property>
+				<property name="jmxPort">8089</property>
+			</configuration>
+		</container>
+		<container qualifier="server-2" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">${http.port.2}</property>
+				<property name="jmxPort">8189</property>
+			</configuration>
+		</container>
+		<container qualifier="server-3" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">${http.port.3}</property>
+				<property name="jmxPort">8289</property>
+			</configuration>
+		</container>
+		<container qualifier="server-4" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">${http.port.4}</property>
+				<property name="jmxPort">8389</property>
+			</configuration>
+		</container>
+	</group>
+</arquillian>

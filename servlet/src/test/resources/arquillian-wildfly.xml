@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Copyright The WildFly Authors
+	SPDX-License-Identifier: Apache-2.0
+-->
+<arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+	<extension qualifier="OCI">
+		<property name="oci:image">quay.io/wildfly/wildfly:latest</property>
+		<property name="oci:network-mode">host</property>
+		<property name="oci:command">/opt/jboss/wildfly/bin/start.sh</property>
+		<property name="oci:start-message-pattern">.*\QWFLYSRV0025\E.*</property>
+		<property name="ref:WILDFLY_USERNAME">username</property>
+		<property name="ref:WILDFLY_PASSWORD">password</property>
+		<property name="ref:PORT_OFFSET">portOffset</property>
+		<property name="ref:SERVER_NAME"/>
+		<property name="file:${project.basedir}/src/test/resources/${test.container}">/opt/jboss/wildfly</property>
+	</extension>
+	<group qualifier="wildfly" default="true">
+		<container qualifier="server-1" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">0</property>
+				<property name="port">${http.port.1}</property>
+				<property name="managementPort">${management.port.1}</property>
+			</configuration>
+		</container>
+		<container qualifier="server-2" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">1</property>
+				<property name="port">${http.port.2}</property>
+				<property name="managementPort">${management.port.2}</property>
+			</configuration>
+		</container>
+		<container qualifier="server-3" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">2</property>
+				<property name="port">${http.port.3}</property>
+				<property name="managementPort">${management.port.3}</property>
+			</configuration>
+		</container>
+		<container qualifier="server-4" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">3</property>
+				<property name="port">${http.port.4}</property>
+				<property name="managementPort">${management.port.4}</property>
+			</configuration>
+		</container>
+	</group>
+</arquillian>
