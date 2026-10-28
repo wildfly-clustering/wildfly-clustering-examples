@@ -43,12 +43,9 @@ public class RequestIdentifierFilter extends HttpFilter implements RequestIdenti
 			request.setAttribute(RequestIdentifierProvider.REQUEST_IDENTIFIER, requestId);
 
 			chain.doFilter(request, response);
-		} catch (IOException | ServletException | RuntimeException | Error e) {
-			e.printStackTrace();
-			throw e;
 		} finally {
 			HttpSession session = request.getSession(false);
-			if (session.isNew()) {
+			if ((session != null) && session.isNew()) {
 				this.manager.recordInitialRequestIdentifier(session, this.getRequestId(request));
 			}
 		}
