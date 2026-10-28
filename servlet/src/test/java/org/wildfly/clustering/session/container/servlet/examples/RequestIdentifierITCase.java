@@ -29,9 +29,9 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.wildfly.clustering.arquillian.AbstractITCase;
 import org.wildfly.clustering.arquillian.DeploymentContainer;
 import org.wildfly.clustering.container.ContainerLifecycle;
+import org.wildfly.clustering.junit.AbstractITCase;
 
 /**
  * @author Paul Ferraro
@@ -172,10 +172,13 @@ public class RequestIdentifierITCase extends AbstractITCase<Class<? extends Http
 			}
 		}
 		// Add any auxiliary libraries
-		File libDirectory = Path.of(System.getProperty("test.lib")).toFile();
-		if (libDirectory.exists()) {
-			for (File lib : libDirectory.listFiles((dir, name) -> name.endsWith(".jar"))) {
-				archive.addAsLibrary(lib);
+		String libs = System.getProperty("test.lib");
+		if (libs != null) {
+			File libDirectory = Path.of(libs).toFile();
+			if (libDirectory.exists()) {
+				for (File lib : libDirectory.listFiles((dir, name) -> name.endsWith(".jar"))) {
+					archive.addAsLibrary(lib);
+				}
 			}
 		}
 		// Output contents of WAR, for verification

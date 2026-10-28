@@ -41,10 +41,10 @@ import java.util.stream.IntStream;
 
 import org.assertj.core.api.Assertions;
 import org.wildfly.clustering.arquillian.Deployment;
-import org.wildfly.clustering.arquillian.Tester;
 import org.wildfly.clustering.function.Consumer;
 import org.wildfly.clustering.function.Function;
 import org.wildfly.clustering.function.IntUnaryOperator;
+import org.wildfly.clustering.junit.Tester;
 
 /**
  * Tests the ability of a servlet container to retain consistency of a monotonically increasing request identifier persisted within a distributed session.
