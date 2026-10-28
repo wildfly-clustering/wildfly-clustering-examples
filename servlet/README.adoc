@@ -37,6 +37,11 @@ N.B. glassfish and payara containers are not yet functional.
 +
 Please feel free to propose additional container options or to suggest configuration improvements for existing containers via pull request.
 
+test.container.version=::
+Default: latest
++
+Runs against a specific version of `test.container`.
+
 test.spring=hazelcast|infinispan/embedded|infinispan/remote|redis::
 When specified, the web application will be instrumented to use Spring Session with the specified session repository implementation, overriding the configured container's default session management.
 

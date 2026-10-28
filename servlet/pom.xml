@@ -20,6 +20,7 @@
 	<properties>
 		<project.module.name>org.wildfly.clustering.examples.servlet</project.module.name>
 		<arquillian.xml>arquillian-${test.container}.xml</arquillian.xml>
+		<test.container.version>latest</test.container.version>
 		<test.args/>
 		<http.port.1>8080</http.port.1>
 		<http.port.2>8081</http.port.2>

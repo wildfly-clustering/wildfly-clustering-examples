@@ -5,7 +5,7 @@
 -->
 <arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 	<extension qualifier="OCI">
-		<property name="oci:image">quay.io/wildfly/wildfly:latest</property>
+		<property name="oci:image">quay.io/wildfly/wildfly:${test.container.version}</property>
 		<property name="oci:network-mode">host</property>
 		<property name="oci:command">/opt/jboss/wildfly/bin/start.sh</property>
 		<property name="oci:start-message-pattern">.*\QWFLYSRV0025\E.*</property>
