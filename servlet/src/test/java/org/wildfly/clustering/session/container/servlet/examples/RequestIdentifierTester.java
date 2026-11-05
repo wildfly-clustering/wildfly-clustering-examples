@@ -156,7 +156,6 @@ public class RequestIdentifierTester implements Tester {
 	interface ClientStatistics {
 		Duration getDuration();
 		int getLostSessions();
-		long getLostSessionAttributes();
 		long getDirtyReads();
 	}
 
@@ -260,8 +259,6 @@ public class RequestIdentifierTester implements Tester {
 			Map<String, Queue<Long>> requestIdsPerSession = clientRecord.getRequestIdentifiers();
 			// There should only be one entry - anything more indicates lost sessions
 			int lostSessions = requestIdsPerSession.size() - 1;
-			// There should only be one initial id in each queue - anything more indicates a lost session attribute
-			long lostSessionAttributes = requestIdsPerSession.values().stream().mapToLong(queue -> queue.stream().filter(Long.valueOf(AbstractRequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER.longValue())::equals).count() - 1).sum();
 			// Duplicate identifiers indicate a dirty read
 			long dirtyReads = requestIdsPerSession.values().stream().mapToLong(queue -> queue.size() - queue.stream().distinct().count()).sum();
 			statistics.add(new ClientStatistics() {
@@ -273,11 +270,6 @@ public class RequestIdentifierTester implements Tester {
 				@Override
 				public int getLostSessions() {
 					return lostSessions;
-				}
-
-				@Override
-				public long getLostSessionAttributes() {
-					return lostSessionAttributes;
 				}
 
 				@Override
@@ -312,8 +304,8 @@ public class RequestIdentifierTester implements Tester {
 		for (List<CompletableFuture<Long>> clientFutureIds : futureIds) {
 			List<Long> clientLostWrites = new ArrayList<>(clientFutureIds.size());
 			lostWrites.add(clientLostWrites);
-			for (CompletableFuture<Long> futureId : clientFutureIds) {
-				clientLostWrites.add(expectedLastId - futureId.join());
+			for (int clientIndex = 0; clientIndex < this.clients.size(); ++clientIndex) {
+				clientLostWrites.add(expectedLastId - clientFutureIds.get(clientIndex).join() - statistics.get(clientIndex).getDirtyReads());
 			}
 		}
 
@@ -322,11 +314,18 @@ public class RequestIdentifierTester implements Tester {
 			for (int clientIndex = 0; clientIndex < this.clients.size(); ++clientIndex) {
 				System.out.println(String.format("Client #%d:", clientIndex + 1));
 				ClientRecord clientRecord = clientRecords.get(clientIndex);
+				System.out.println(String.format("\tExecution time: %s", clientRecord.getDuration().join()));
 				Map<String, Queue<Long>> result = clientRecord.getRequestIdentifiers();
 				for (Map.Entry<String, Queue<Long>> entry : result.entrySet()) {
 					System.out.println(String.format("\tSession: %s", entry.getKey()));
 					System.out.println(String.format("\t\tExpected request IDs: %s", Arrays.toString(LongStream.iterate(AbstractRequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER, Math::incrementExact).limit(this.requests).toArray())));
 					System.out.println(String.format("\t\t  Actual request IDs: %s", entry.getValue().stream().sorted().toList()));
+				}
+				if (uris.size() > 1) {
+					System.out.println("\tLast request ID:");
+					for (int serverIndex = 0; serverIndex < uris.size(); ++serverIndex) {
+						System.out.println(String.format("\t\t%s: %s", deployments.get(serverIndex).getContainer().getName(), futureIds.get(serverIndex).get(clientIndex).join()));
+					}
 				}
 				System.out.println(String.format("\tClient failures: %s", clientRecord.getClientFailures().get()));
 				Predicate<Integer> unexpectedStatusCode = Predicate.equalTo(HttpServletResponse.SC_OK).negate();
@@ -339,6 +338,7 @@ public class RequestIdentifierTester implements Tester {
 					}
 				}
 			}
+			System.out.println("----------------------------------------------------------------");
 		}
 		System.out.println(String.format("Execution time:"));
 		if (this.clients.size() > 1) {
@@ -360,16 +360,6 @@ public class RequestIdentifierTester implements Tester {
 		} else {
 			System.out.println(String.format("\t%d", statistics.get(0).getLostSessions()));
 		}
-		System.out.println("Lost session attributes:");
-		if (this.clients.size() > 1) {
-			statistics.sort(Comparator.comparing(ClientStatistics::getLostSessionAttributes));
-			System.out.println(String.format("\t   Mean: %d", (statistics.stream().mapToLong(ClientStatistics::getLostSessionAttributes).sum() / this.clients.size())));
-			System.out.println(String.format("\t Median: %d", statistics.get(this.clients.size() / 2).getLostSessionAttributes()));
-			System.out.println(String.format("\tMinimum: %d", statistics.get(0).getLostSessionAttributes()));
-			System.out.println(String.format("\tMaximum: %d", statistics.get(this.clients.size() - 1).getLostSessionAttributes()));
-		} else {
-			System.out.println(String.format("\t%d", statistics.get(0).getLostSessionAttributes()));
-		}
 		System.out.println(String.format("Stale reads (out of %d):", this.requests));
 		if (this.clients.size() > 1) {
 			statistics.sort(Comparator.comparing(ClientStatistics::getDirtyReads));
@@ -380,17 +370,20 @@ public class RequestIdentifierTester implements Tester {
 		} else {
 			System.out.println(String.format("\t%d", statistics.get(0).getDirtyReads()));
 		}
-		for (int i = 0; i < lostWrites.size(); ++i) {
-			List<Long> containerLostWrites = lostWrites.get(i);
-			Collections.sort(containerLostWrites);
-			System.out.println(String.format("Lost writes (out of %d): %s", this.requests, deployments.get(i).getContainer().getName()));
-			if (this.clients.size() > 1) {
-				System.out.println(String.format("\t   Mean: %d", (containerLostWrites.stream().mapToLong(Long::longValue).sum() / this.clients.size())));
-				System.out.println(String.format("\t Median: %d", containerLostWrites.get(this.clients.size() / 2)));
-				System.out.println(String.format("\tMinimum: %d", containerLostWrites.get(0)));
-				System.out.println(String.format("\tMaximum: %d", containerLostWrites.get(this.clients.size() - 1)));
-			} else {
-				System.out.println(String.format("\t%d", containerLostWrites.get(0)));
+		// If deployed to a cluster, validate last request ID on each server
+		if (uris.size() > 1) {
+			for (int i = 0; i < lostWrites.size(); ++i) {
+				List<Long> containerLostWrites = lostWrites.get(i);
+				Collections.sort(containerLostWrites);
+				System.out.println(String.format("Lost writes (out of %d): %s", this.requests, deployments.get(i).getContainer().getName()));
+				if (this.clients.size() > 1) {
+					System.out.println(String.format("\t   Mean: %d", (containerLostWrites.stream().mapToLong(Long::longValue).sum() / this.clients.size())));
+					System.out.println(String.format("\t Median: %d", containerLostWrites.get(this.clients.size() / 2)));
+					System.out.println(String.format("\tMinimum: %d", containerLostWrites.get(0)));
+					System.out.println(String.format("\tMaximum: %d", containerLostWrites.get(this.clients.size() - 1)));
+				} else {
+					System.out.println(String.format("\t%d", containerLostWrites.get(0)));
+				}
 			}
 		}
 		System.out.println("****************************************************************");
