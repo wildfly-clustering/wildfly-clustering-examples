@@ -8,7 +8,6 @@ package org.wildfly.clustering.session.container.servlet.examples;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -18,7 +17,9 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -30,6 +31,7 @@ import java.util.OptionalLong;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -38,12 +40,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
-import org.assertj.core.api.Assertions;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.wildfly.clustering.arquillian.Deployment;
 import org.wildfly.clustering.function.Consumer;
 import org.wildfly.clustering.function.Function;
 import org.wildfly.clustering.function.IntUnaryOperator;
+import org.wildfly.clustering.function.Predicate;
+import org.wildfly.clustering.function.Runner;
+import org.wildfly.clustering.function.Supplier;
 import org.wildfly.clustering.junit.Tester;
 
 /**
@@ -51,13 +58,18 @@ import org.wildfly.clustering.junit.Tester;
  * @author Paul Ferraro
  */
 public class RequestIdentifierTester implements Tester {
-	private static final Consumer<HttpResponse<Void>> VALIDATOR = response -> Assertions.assertThat(response.statusCode()).isEqualTo(HttpURLConnection.HTTP_OK);
 	private static final Function<HttpResponse<Void>, Optional<String>> SESSION = response -> response.headers().firstValue(SessionServlet.SESSION);
-	private static final Function<HttpResponse<Void>, OptionalLong> REQUEST_ID = response -> response.headers().firstValueAsLong(RequestIdentifierProvider.REQUEST_IDENTIFIER);
+	private static final Function<HttpResponse<Void>, OptionalLong> REQUEST_ID = response -> response.headers().firstValueAsLong(RequestIdentifierProvider.REQUEST_ID);
 	private static final Consumer<HttpResponse<Void>> REPORTER = response -> System.out.println("Cookies: " + response.headers().allValues("Set-Cookie"));
 
 	/** Encapsulates the configuration of this tester */
 	interface Configuration {
+		/**
+		 * Returns the number of servers.
+		 * @return the number of servers.
+		 */
+		int getServers();
+
 		/**
 		 * Returns the number of clients/sessions.
 		 * @return the number of clients/sessions.
@@ -87,18 +99,25 @@ public class RequestIdentifierTester implements Tester {
 		 * @return the ratio of requests that should failover to a random member rather than stick to the previous one.
 		 */
 		double getFailoverRatio();
+
+		/**
+		 * Returns true, if verbosity is enabled, false otherwise.
+		 * @return true, if verbosity is enabled, false otherwise.
+		 */
+		boolean isVerbose();
 	}
 
 	private final IntUnaryOperator router;
-	private final Consumer<CompletableFuture<Void>> handler;
+	private final Runnable delay;
 	private final int requests;
 	private final Deque<Runnable> closeTasks = new LinkedList<>();
-	private final List<HttpClient> clients;
+	private final List<Map.Entry<HttpClient, Executor>> clients;
 	private final Executor executor;
+	private final boolean verbose;
 
 	public RequestIdentifierTester(Configuration configuration) {
 		Duration interval = configuration.getInterval();
-		this.handler = interval.isZero() ? Consumer.of() : future -> {
+		this.delay = interval.isZero() ? Runner.of() : () -> {
 			try {
 				TimeUnit.NANOSECONDS.sleep(interval.toNanos());
 			} catch (InterruptedException e) {
@@ -119,11 +138,26 @@ public class RequestIdentifierTester implements Tester {
 			if (clientExecutor != null) {
 				this.closeTasks.add(clientExecutor::shutdown);
 			}
-			this.clients.add(HttpClient.newBuilder().cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL)).executor((clientExecutor != null) ? clientExecutor : Runnable::run).build());
+			this.clients.add(Map.entry(HttpClient.newBuilder().cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL)).build(), (clientExecutor != null) ? clientExecutor : Runnable::run));
 		}
 		Random random = new Random();
 		double failoverRatio = configuration.getFailoverRatio();
-		this.router = index -> ((random.nextDouble() + failoverRatio) >= 1) ? random.nextInt(Integer.MAX_VALUE) : index;
+		this.router = index -> ((random.nextDouble() + failoverRatio) >= 1d) ? random.nextInt(configuration.getServers()) : index;
+		this.verbose = configuration.isVerbose();
+	}
+
+	interface ClientRecord {
+		Map<String, Queue<Long>> getRequestIdentifiers();
+		CompletableFuture<Duration> getDuration();
+		AtomicInteger getClientFailures();
+		Map<Integer, AtomicInteger> getResponseStatusCodes();
+	}
+
+	interface ClientStatistics {
+		Duration getDuration();
+		int getLostSessions();
+		long getLostSessionAttributes();
+		long getDirtyReads();
 	}
 
 	@Override
@@ -134,84 +168,137 @@ public class RequestIdentifierTester implements Tester {
 			URI baseURI = Objects.requireNonNull(deployment.locate(SessionServlet.class));
 			uris.add(baseURI.resolve(SessionServlet.NAME));
 		}
-
-		int queueSize = this.requests + 1;
-		List<Map.Entry<Map<String, Queue<Long>>, CompletableFuture<Duration>>> futureResults = new ArrayList<>(this.clients.size());
+		List<ClientRecord> clientRecords = new ArrayList<>(this.clients.size());
 		for (int clientIndex = 0; clientIndex < this.clients.size(); ++clientIndex) {
-			HttpClient client = this.clients.get(clientIndex);
-			// Simulate load balancing of session establishing request
-			int startTargetIndex = clientIndex % uris.size();
-			Iterator<URI> router = IntStream.iterate(startTargetIndex, this.router).mapToObj(index -> uris.get(index % uris.size())).iterator();
-			Map<String, Queue<Long>> responses = new ConcurrentHashMap<>();
-			Function<String, Queue<Long>> queueFactory = session -> new ArrayBlockingQueue<>(queueSize);
-			Consumer<HttpResponse<Void>> recorder = response -> SESSION.apply(response).ifPresent(session -> {
-				Queue<Long> queue = responses.computeIfAbsent(session, queueFactory);
-				REQUEST_ID.apply(response).ifPresent(queue::add);
-			});
-			Consumer<HttpResponse<Void>> processor = VALIDATOR.andThen(recorder);
-			CompletableFuture<Duration> future = new CompletableFuture<>();
-			futureResults.add(Map.entry(responses, future));
-			URI uri = router.next();
-			System.out.println(String.format("Client #%d establishing session on %s via %s", clientIndex + 1, deployments.get(startTargetIndex).getContainer().getName(), uri));
+			Map.Entry<HttpClient, Executor> clientEntry = this.clients.get(clientIndex);
+			HttpClient client = clientEntry.getKey();
+			Executor executor = clientEntry.getValue();
+			ClientRecord clientRecord = new ClientRecord() {
+				private final Map<String, Queue<Long>> requestIdentifiers = new ConcurrentHashMap<>();
+				private final CompletableFuture<Duration> duration = new CompletableFuture<>();
+				private final AtomicInteger clientFailures = new AtomicInteger(0);
+				private final Map<Integer, AtomicInteger> responseStatusCodes = new ConcurrentHashMap<>();
+
+				@Override
+				public Map<String, Queue<Long>> getRequestIdentifiers() {
+					return this.requestIdentifiers;
+				}
+
+				@Override
+				public CompletableFuture<Duration> getDuration() {
+					return this.duration;
+				}
+
+				@Override
+				public AtomicInteger getClientFailures() {
+					return this.clientFailures;
+				}
+
+				@Override
+				public Map<Integer, AtomicInteger> getResponseStatusCodes() {
+					return this.responseStatusCodes;
+				}
+			};
+			clientRecords.add(clientRecord);
+			// Simulate load balancing of initial (session establishing) request
+			int initialServerIndex = clientIndex % uris.size();
+			Iterator<URI> clientRouter = IntStream.iterate(initialServerIndex, this.router).mapToObj(uris::get).iterator();
+			Function<String, Queue<Long>> queueFactory = session -> new ArrayBlockingQueue<>(this.requests);
+			Function<Integer, AtomicInteger> responseCodeFactory = Function.of(Consumer.of(), AtomicInteger::new);
+			Consumer<HttpResponse<Void>> recorder = response -> {
+				clientRecord.getResponseStatusCodes().computeIfAbsent(response.statusCode(), responseCodeFactory).incrementAndGet();
+				SESSION.apply(response).ifPresent(session -> {
+					Queue<Long> queue = clientRecord.getRequestIdentifiers().computeIfAbsent(session, queueFactory);
+					REQUEST_ID.apply(response).ifPresent(queue::add);
+				});
+			};
+			URI initialURI = clientRouter.next();
+			Runnable delay = this.delay;
+			System.out.println(String.format("Client #%d establishing session on %s via %s", clientIndex + 1, deployments.get(initialServerIndex).getContainer().getName(), initialURI));
 			this.executor.execute(() -> {
 				Instant start = Instant.now();
 				try {
-					processor.andThen(REPORTER).accept(client.send(HttpRequest.newBuilder(uri).POST(BodyPublishers.noBody()).build(), BodyHandlers.discarding()));
-					if (this.requests > 0) {
-						AtomicInteger completed = new AtomicInteger(0);
-						for (int i = 0; i < this.requests; ++i) {
-							this.handler.accept(client.sendAsync(HttpRequest.newBuilder(router.next()).GET().build(), BodyHandlers.discarding())
-									.orTimeout(30, TimeUnit.SECONDS)
-									.thenAccept(processor)
-									.whenComplete((ignore, exception) -> {
-										if (exception != null) {
-											future.completeExceptionally(exception);
-										} else if (completed.incrementAndGet() == this.requests) {
-											future.complete(Duration.between(start, Instant.now()));
-										}
-									}));
+					// Establish session
+					recorder.andThen(REPORTER).accept(client.send(HttpRequest.newBuilder(initialURI).POST(BodyPublishers.noBody()).build(), BodyHandlers.discarding()));
+					if (this.requests > 1) {
+						Consumer<URI> request = target -> {
+							try {
+								recorder.accept(client.send(HttpRequest.newBuilder(target).GET().build(), BodyHandlers.discarding()));
+							} catch (IOException e) {
+								clientRecord.getClientFailures().incrementAndGet();
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								throw new CancellationException();
+							}
+						};
+						AtomicInteger completed = new AtomicInteger(1);
+						for (int i = 1; i < this.requests; ++i) {
+							URI nextURI = clientRouter.next();
+							CompletableFuture.runAsync(Runner.of(Supplier.of(nextURI), request), executor).whenComplete((ignore, exception) -> {
+								if (completed.incrementAndGet() == this.requests) {
+									clientRecord.getDuration().complete(Duration.between(start, Instant.now()));
+								}
+								if (exception != null) {
+									exception.printStackTrace();
+								}
+							});
+							delay.run();
 						}
 					}
 				} catch (IOException e) {
-					future.completeExceptionally(e);
+					clientRecord.getDuration().completeExceptionally(e);
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
-					future.cancel(true);
+					clientRecord.getDuration().cancel(true);
 				}
 			});
 		}
 
-		List<Duration> durations = new ArrayList<>(this.clients.size());
-		List<Integer> lostSessions = new ArrayList<>(this.clients.size());
-		List<Long> lostSessionAttributes = new ArrayList<>(this.clients.size());
-		List<Long> dirtyReads = new ArrayList<>(this.clients.size());
-		for (Map.Entry<Map<String, Queue<Long>>, CompletableFuture<Duration>> futureRequestIdsPerSession : futureResults) {
-			durations.add(futureRequestIdsPerSession.getValue().join());
-			Map<String, Queue<Long>> requestIdsPerSession = futureRequestIdsPerSession.getKey();
+		List<ClientStatistics> statistics = new ArrayList<>(this.clients.size());
+		for (ClientRecord clientRecord : clientRecords) {
+			Duration duration = clientRecord.getDuration().join();
+			Map<String, Queue<Long>> requestIdsPerSession = clientRecord.getRequestIdentifiers();
 			// There should only be one entry - anything more indicates lost sessions
-			lostSessions.add(requestIdsPerSession.size() - 1);
+			int lostSessions = requestIdsPerSession.size() - 1;
 			// There should only be one initial id in each queue - anything more indicates a lost session attribute
-			lostSessionAttributes.add(requestIdsPerSession.values().stream().mapToLong(queue -> queue.stream().filter(Long.valueOf(RequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER.longValue())::equals).count() - 1).sum());
+			long lostSessionAttributes = requestIdsPerSession.values().stream().mapToLong(queue -> queue.stream().filter(Long.valueOf(AbstractRequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER.longValue())::equals).count() - 1).sum();
 			// Duplicate identifiers indicate a dirty read
-			dirtyReads.add(requestIdsPerSession.values().stream().mapToLong(queue -> queue.size() - queue.stream().distinct().count()).sum());
+			long dirtyReads = requestIdsPerSession.values().stream().mapToLong(queue -> queue.size() - queue.stream().distinct().count()).sum();
+			statistics.add(new ClientStatistics() {
+				@Override
+				public Duration getDuration() {
+					return duration;
+				}
+
+				@Override
+				public int getLostSessions() {
+					return lostSessions;
+				}
+
+				@Override
+				public long getLostSessionAttributes() {
+					return lostSessionAttributes;
+				}
+
+				@Override
+				public long getDirtyReads() {
+					return dirtyReads;
+				}
+			});
 		}
-		Collections.sort(durations);
-		Collections.sort(lostSessions);
-		Collections.sort(lostSessionAttributes);
-		Collections.sort(dirtyReads);
 
 		List<List<CompletableFuture<Long>>> futureIds = new ArrayList<>(uris.size());
 		for (URI uri : uris) {
 			List<CompletableFuture<Long>> clientFutureIds = new ArrayList<>(this.clients.size());
 			futureIds.add(clientFutureIds);
-			for (HttpClient client : this.clients) {
+			for (Map.Entry<HttpClient, Executor> clientEntry : this.clients) {
+				HttpClient client = clientEntry.getKey();
 				CompletableFuture<Long> clientFutureId = new CompletableFuture<>();
 				Consumer<HttpResponse<Void>> recorder = response -> clientFutureId.complete(REQUEST_ID.apply(response).orElse(0L));
-				Consumer<HttpResponse<Void>> processor = VALIDATOR.andThen(recorder);
 				clientFutureIds.add(clientFutureId);
 				client.sendAsync(HttpRequest.newBuilder(uri).method("HEAD", BodyPublishers.noBody()).build(), BodyHandlers.discarding())
 						.orTimeout(30, TimeUnit.SECONDS)
-						.thenAccept(processor)
+						.thenAccept(recorder)
 						.whenComplete((ignore, exception) -> {
 							if (exception != null) {
 								clientFutureId.completeExceptionally(exception);
@@ -220,7 +307,7 @@ public class RequestIdentifierTester implements Tester {
 			}
 		}
 
-		long expectedLastId = RequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER + this.requests;
+		long expectedLastId = AbstractRequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER + this.requests - 1;
 		List<List<Long>> lostWrites = new ArrayList<>(uris.size());
 		for (List<CompletableFuture<Long>> clientFutureIds : futureIds) {
 			List<Long> clientLostWrites = new ArrayList<>(clientFutureIds.size());
@@ -228,62 +315,89 @@ public class RequestIdentifierTester implements Tester {
 			for (CompletableFuture<Long> futureId : clientFutureIds) {
 				clientLostWrites.add(expectedLastId - futureId.join());
 			}
-			Collections.sort(clientLostWrites);
 		}
 
 		System.out.println("****************************************************************");
+		if (this.verbose) {
+			for (int clientIndex = 0; clientIndex < this.clients.size(); ++clientIndex) {
+				System.out.println(String.format("Client #%d:", clientIndex + 1));
+				ClientRecord clientRecord = clientRecords.get(clientIndex);
+				Map<String, Queue<Long>> result = clientRecord.getRequestIdentifiers();
+				for (Map.Entry<String, Queue<Long>> entry : result.entrySet()) {
+					System.out.println(String.format("\tSession: %s", entry.getKey()));
+					System.out.println(String.format("\t\tExpected request IDs: %s", Arrays.toString(LongStream.iterate(AbstractRequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER, Math::incrementExact).limit(this.requests).toArray())));
+					System.out.println(String.format("\t\t  Actual request IDs: %s", entry.getValue().stream().sorted().toList()));
+				}
+				System.out.println(String.format("\tClient failures: %s", clientRecord.getClientFailures().get()));
+				Predicate<Integer> unexpectedStatusCode = Predicate.equalTo(HttpServletResponse.SC_OK).negate();
+				if (clientRecord.getResponseStatusCodes().keySet().stream().anyMatch(unexpectedStatusCode)) {
+					System.out.println("\tUnexpected response status codes:");
+					for (Map.Entry<Integer, AtomicInteger> entry : clientRecord.getResponseStatusCodes().entrySet()) {
+						if (unexpectedStatusCode.test(entry.getKey())) {
+							System.out.println(String.format("\t\t%d: %d", entry.getKey(), entry.getValue().get()));
+						}
+					}
+				}
+			}
+		}
 		System.out.println(String.format("Execution time:"));
 		if (this.clients.size() > 1) {
-			System.out.println("\t   Mean: " + (durations.stream().reduce(Duration::plus).orElse(Duration.ZERO).dividedBy(this.clients.size())));
-			System.out.println("\t Median: " + durations.get(this.clients.size() / 2));
-			System.out.println("\tMinimum: " + durations.get(0));
-			System.out.println("\tMaximum: " + durations.get(this.clients.size() - 1));
+			statistics.sort(Comparator.comparing(ClientStatistics::getDuration));
+			System.out.println(String.format("\t   Mean: %s", (statistics.stream().map(ClientStatistics::getDuration).reduce(Duration::plus).orElse(Duration.ZERO).dividedBy(this.clients.size()))));
+			System.out.println(String.format("\t Median: %s", statistics.get(this.clients.size() / 2).getDuration()));
+			System.out.println(String.format("\tMinimum: %s", statistics.get(0).getDuration()));
+			System.out.println(String.format("\tMaximum: %s", statistics.get(this.clients.size() - 1).getDuration()));
 		} else {
-			System.out.println("\t" + durations.get(0));
+			System.out.println(String.format("\t%s", statistics.get(0).getDuration()));
 		}
 		System.out.println("Lost sessions:");
 		if (this.clients.size() > 1) {
-			System.out.println("\t   Mean: " + (lostSessions.stream().mapToInt(Integer::intValue).sum() / this.clients.size()));
-			System.out.println("\t Median: " + lostSessions.get(this.clients.size() / 2));
-			System.out.println("\tMinimum: " + lostSessions.get(0));
-			System.out.println("\tMaximum: " + lostSessions.get(this.clients.size() - 1));
+			statistics.sort(Comparator.comparing(ClientStatistics::getLostSessions));
+			System.out.println(String.format("\t   Mean: %d", (statistics.stream().mapToInt(ClientStatistics::getLostSessions).sum() / this.clients.size())));
+			System.out.println(String.format("\t Median: %d", statistics.get(this.clients.size() / 2).getLostSessions()));
+			System.out.println(String.format("\tMinimum: %d", statistics.get(0).getLostSessions()));
+			System.out.println(String.format("\tMaximum: %d", statistics.get(this.clients.size() - 1).getLostSessions()));
 		} else {
-			System.out.println("\t" + lostSessions.get(0));
+			System.out.println(String.format("\t%d", statistics.get(0).getLostSessions()));
 		}
 		System.out.println("Lost session attributes:");
 		if (this.clients.size() > 1) {
-			System.out.println("\t   Mean: " + (lostSessionAttributes.stream().mapToLong(Long::longValue).sum() / this.clients.size()));
-			System.out.println("\t Median: " + lostSessionAttributes.get(this.clients.size() / 2));
-			System.out.println("\tMinimum: " + lostSessionAttributes.get(0));
-			System.out.println("\tMaximum: " + lostSessionAttributes.get(this.clients.size() - 1));
+			statistics.sort(Comparator.comparing(ClientStatistics::getLostSessionAttributes));
+			System.out.println(String.format("\t   Mean: %d", (statistics.stream().mapToLong(ClientStatistics::getLostSessionAttributes).sum() / this.clients.size())));
+			System.out.println(String.format("\t Median: %d", statistics.get(this.clients.size() / 2).getLostSessionAttributes()));
+			System.out.println(String.format("\tMinimum: %d", statistics.get(0).getLostSessionAttributes()));
+			System.out.println(String.format("\tMaximum: %d", statistics.get(this.clients.size() - 1).getLostSessionAttributes()));
 		} else {
-			System.out.println("\t" + lostSessionAttributes.get(0));
+			System.out.println(String.format("\t%d", statistics.get(0).getLostSessionAttributes()));
 		}
-		System.out.println(String.format("Dirty reads (out of %d):", this.requests));
+		System.out.println(String.format("Stale reads (out of %d):", this.requests));
 		if (this.clients.size() > 1) {
-			System.out.println("\t   Mean: " + (dirtyReads.stream().mapToLong(Long::longValue).sum() / this.clients.size()));
-			System.out.println("\t Median: " + dirtyReads.get(this.clients.size() / 2));
-			System.out.println("\tMinimum: " + dirtyReads.get(0));
-			System.out.println("\tMaximum: " + dirtyReads.get(this.clients.size() - 1));
+			statistics.sort(Comparator.comparing(ClientStatistics::getDirtyReads));
+			System.out.println(String.format("\t   Mean: %d", (statistics.stream().mapToLong(ClientStatistics::getDirtyReads).sum() / this.clients.size())));
+			System.out.println(String.format("\t Median: %d", statistics.get(this.clients.size() / 2).getDirtyReads()));
+			System.out.println(String.format("\tMinimum: %d", statistics.get(0).getDirtyReads()));
+			System.out.println(String.format("\tMaximum: %d", statistics.get(this.clients.size() - 1).getDirtyReads()));
 		} else {
-			System.out.println("\t" + dirtyReads.get(0));
+			System.out.println(String.format("\t%d", statistics.get(0).getDirtyReads()));
 		}
 		for (int i = 0; i < lostWrites.size(); ++i) {
 			List<Long> containerLostWrites = lostWrites.get(i);
+			Collections.sort(containerLostWrites);
 			System.out.println(String.format("Lost writes (out of %d): %s", this.requests, deployments.get(i).getContainer().getName()));
 			if (this.clients.size() > 1) {
-				System.out.println("\t   Mean: " + (containerLostWrites.stream().mapToLong(Long::longValue).sum() / this.clients.size()));
-				System.out.println("\t Median: " + containerLostWrites.get(this.clients.size() / 2));
-				System.out.println("\tMinimum: " + containerLostWrites.get(0));
-				System.out.println("\tMaximum: " + containerLostWrites.get(this.clients.size() - 1));
+				System.out.println(String.format("\t   Mean: %d", (containerLostWrites.stream().mapToLong(Long::longValue).sum() / this.clients.size())));
+				System.out.println(String.format("\t Median: %d", containerLostWrites.get(this.clients.size() / 2)));
+				System.out.println(String.format("\tMinimum: %d", containerLostWrites.get(0)));
+				System.out.println(String.format("\tMaximum: %d", containerLostWrites.get(this.clients.size() - 1)));
 			} else {
-				System.out.println("\t" + containerLostWrites.get(0));
+				System.out.println(String.format("\t%d", containerLostWrites.get(0)));
 			}
 		}
 		System.out.println("****************************************************************");
 
 		// Delete active sessions
-		for (HttpClient client : this.clients) {
+		for (Map.Entry<HttpClient, Executor> clientEntry : this.clients) {
+			HttpClient client = clientEntry.getKey();
 			try {
 				client.send(HttpRequest.newBuilder(uris.get(0)).DELETE().build(), BodyHandlers.discarding());
 			} catch (InterruptedException e) {

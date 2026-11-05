@@ -5,9 +5,8 @@
 
 package org.wildfly.clustering.session.container.servlet.examples;
 
-import java.util.function.Function;
-
 import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * A request identifier filter that performs thread-safe reads/writes to the session using the monitor of the HttpSession.
@@ -15,11 +14,18 @@ import jakarta.servlet.annotation.WebFilter;
  * @author Paul Ferraro
  */
 @WebFilter(urlPatterns = "/*")
-public class SessionMutexRequestIdentifierFilter extends MutexRequestIdentifierFilter {
+public class SessionMutexRequestIdentifierFilter extends AbstractIntegerRequestIdentifierFilter {
 	private static final long serialVersionUID = -642062907208910796L;
 
 	/** Default constructor */
 	public SessionMutexRequestIdentifierFilter() {
-		super(Function.identity());
+		// Do nothing
+	}
+
+	@Override
+	Integer getCurrentRequestId(HttpSession session) {
+		synchronized (session) {
+			return super.getCurrentRequestId(session);
+		}
 	}
 }

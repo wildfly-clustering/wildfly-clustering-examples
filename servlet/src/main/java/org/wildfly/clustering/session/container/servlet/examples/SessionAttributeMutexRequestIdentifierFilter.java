@@ -7,7 +7,12 @@ package org.wildfly.clustering.session.container.servlet.examples;
 
 import java.io.Serial;
 
+import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.annotation.WebListener;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
 
 /**
  * A request identifier filter that performs thread-safe reads/writes to the session using the monitor of an HttpSession attribute.
@@ -15,22 +20,37 @@ import jakarta.servlet.annotation.WebFilter;
  * @author Paul Ferraro
  */
 @WebFilter(urlPatterns = "/*")
-public class SessionAttributeMutexRequestIdentifierFilter extends MutexRequestIdentifierFilter {
+public class SessionAttributeMutexRequestIdentifierFilter extends AbstractIntegerRequestIdentifierFilter implements ServletContextListener {
 	@Serial
 	private static final long serialVersionUID = -2687109660865258448L;
-	private static final String MUTEX_NAME = "x-request-id-mutex";
+	private static final String REQUEST_ID_MUTEX = "x-request-id-mutex";
 
 	/** Default constructor */
 	public SessionAttributeMutexRequestIdentifierFilter() {
-		super(session -> {
-			Object mutex = session.getAttribute(MUTEX_NAME);
-			// Should only be the case when the session is new
-			// Otherwise, this put-if-absent logic would not be thread-safe
-			if (mutex == null) {
-				mutex = new byte[0];
-				session.setAttribute(MUTEX_NAME, mutex);
-			}
-			return mutex;
-		});
+		// Do nothing
+	}
+
+	@Override
+	Integer getCurrentRequestId(HttpSession session) {
+		Object mutex = session.getAttribute(REQUEST_ID_MUTEX);
+		synchronized (mutex) {
+			return super.getCurrentRequestId(session);
+		}
+	}
+
+	/**
+	 * A session listener that stores a mutex for new sessions.
+	 */
+	@WebListener
+	public static class MutexSessionListener implements HttpSessionListener {
+		/** Default constructor */
+		public MutexSessionListener() {
+			// Do nothing
+		}
+
+		@Override
+		public void sessionCreated(HttpSessionEvent event) {
+			event.getSession().setAttribute(REQUEST_ID_MUTEX, new byte[0]);
+		}
 	}
 }

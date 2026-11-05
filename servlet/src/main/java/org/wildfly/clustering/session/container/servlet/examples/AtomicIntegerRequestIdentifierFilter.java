@@ -18,11 +18,11 @@ import jakarta.servlet.annotation.WebFilter;
  * @author Paul Ferraro
  */
 @WebFilter(urlPatterns = "/*")
-public class AtomicIntegerRequestIdentifierFilter extends RequestIdentifierFilter {
+public class AtomicIntegerRequestIdentifierFilter extends AbstractAtomicIntegerRequestIdentifierFilter {
 	private static final long serialVersionUID = 2933347474895361068L;
 
 	/** Default constructor */
 	public AtomicIntegerRequestIdentifierFilter() {
-		super(new RequestIdentifierManager.AtomicIntegerRequestIdentifierManager(false));
+		// Do nothing
 	}
 }

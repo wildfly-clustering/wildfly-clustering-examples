@@ -97,11 +97,11 @@ Default: 100
 Specifies the number of requests initiated per client.
 
 test.threads=#::
-Default: 0
+Default: 1
 +
 This specifies the number of invocation threads per client, effectively limiting concurrency of requests for a given session.
 +
-`test.threads=0` implies sequential request invocation per session.
+`test.threads=1` implies sequential request invocation per session.
 
 test.interval=#::
 Default: PT0s

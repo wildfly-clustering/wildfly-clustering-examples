@@ -5,7 +5,10 @@
 
 package org.wildfly.clustering.session.container.servlet.examples;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * A servlet filter that provides a unique identifier to requests for a given session via a mutable AtomicInteger session attribute.
@@ -13,11 +16,20 @@ import jakarta.servlet.annotation.WebFilter;
  * @author Paul Ferraro
  */
 @WebFilter(urlPatterns = "/*")
-public class ResetAtomicIntegerRequestIdentifierFilter extends RequestIdentifierFilter {
+public class ResetAtomicIntegerRequestIdentifierFilter extends AbstractAtomicIntegerRequestIdentifierFilter {
 	private static final long serialVersionUID = 2933347474895361068L;
 
 	/** Default constructor */
 	public ResetAtomicIntegerRequestIdentifierFilter() {
-		super(new RequestIdentifierManager.AtomicIntegerRequestIdentifierManager(true));
+		// Do nothing
+	}
+
+	@Override
+	public Integer getCurrentRequestId(HttpSession session) {
+		AtomicInteger requestId = this.readRequestId(session);
+		Integer currentRequestId = this.next(requestId);
+		// Some distributed servlet containers require a redundant to HttpSession.setAttribute(...) when an an attribute is mutated, even though the object reference has not changed!
+		this.writeRequestId(session, requestId);
+		return currentRequestId;
 	}
 }

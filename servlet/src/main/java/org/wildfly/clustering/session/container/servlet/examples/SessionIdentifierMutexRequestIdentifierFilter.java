@@ -16,12 +16,19 @@ import jakarta.servlet.http.HttpSession;
  * @author Paul Ferraro
  */
 @WebFilter(urlPatterns = "/*")
-public class SessionIdentifierMutexRequestIdentifierFilter extends MutexRequestIdentifierFilter {
+public class SessionIdentifierMutexRequestIdentifierFilter extends AbstractIntegerRequestIdentifierFilter {
 	@Serial
 	private static final long serialVersionUID = -4008102039114055103L;
 
 	/** Default constructor */
 	public SessionIdentifierMutexRequestIdentifierFilter() {
-		super(HttpSession::getId);
+		// Do nothing
+	}
+
+	@Override
+	Integer getCurrentRequestId(HttpSession session) {
+		synchronized (session.getId()) {
+			return super.getCurrentRequestId(session);
+		}
 	}
 }

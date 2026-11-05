@@ -15,13 +15,12 @@ import jakarta.servlet.annotation.WebFilter;
  * @author Paul Ferraro
  */
 @WebFilter(urlPatterns = "/*")
-public class NoMutexRequestIdentifierFilter extends RequestIdentifierFilter {
-
+public class NoMutexRequestIdentifierFilter extends AbstractIntegerRequestIdentifierFilter {
 	@Serial
 	private static final long serialVersionUID = -9109103777029541239L;
 
 	/** Default constructor */
 	public NoMutexRequestIdentifierFilter() {
-		super(new RequestIdentifierManager.IntegerRequestIdentifierManager());
+		// Do nothing
 	}
 }
