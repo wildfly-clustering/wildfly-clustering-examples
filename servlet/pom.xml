@@ -21,6 +21,7 @@
 		<project.module.name>org.wildfly.clustering.examples.servlet</project.module.name>
 		<arquillian.xml>arquillian-${test.container}.xml</arquillian.xml>
 		<test.container.version>latest</test.container.version>
+		<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.AtomicIntegerResetRequestIdentifierFilter</test.filter.class>
 		<test.args/>
 		<http.port.1>8080</http.port.1>
 		<http.port.2>8081</http.port.2>
@@ -197,12 +198,102 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<configuration>
-					<argLine>@{argLine} -Darquillian.xml=${arquillian.xml} -Dtest.resources=${project.build.outputDirectory} -Dtest.lib=${project.basedir}/target/lib ${test.args}</argLine>
+					<argLine>@{argLine} ${test.args}</argLine>
+					<systemPropertyVariables>
+						<arquillian.xml>${arquillian.xml}</arquillian.xml>
+						<test.filter.class>${test.filter.class}</test.filter.class>
+						<test.resources>${project.build.outputDirectory}</test.resources>
+						<test.lib>${project.basedir}/target/lib</test.lib>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
 	<profiles>
+		<profile>
+			<id>no-mutex</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>no-mutex</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.NoMutexRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
+		<profile>
+			<id>session-mutex</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>session-mutex</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.SessionMutexRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
+		<profile>
+			<id>session-identifier-mutex</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>session-id-mutex</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.SessionIdentifierMutexRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
+		<profile>
+			<id>lazy-session-attribute-mutex</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>lazy-session-attribute-mutex</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.LazySessionAttributeMutexRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
+		<profile>
+			<id>session-attribute-mutex</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>session-attribute-mutex</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.SessionAttributeMutexRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
+		<profile>
+			<id>atomic</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>atomic</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.AtomicIntegerRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
+		<profile>
+			<id>atomic-reset</id>
+			<activation>
+				<property>
+					<name>test.filter</name>
+					<value>atomic-reset</value>
+				</property>
+			</activation>
+			<properties>
+				<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.AtomicIntegerResetRequestIdentifierFilter</test.filter.class>
+			</properties>
+		</profile>
 		<profile>
 			<id>default</id>
 			<activation>
@@ -214,6 +305,7 @@
 				<resources>
 					<resource>
 						<directory>src/main/resources/default</directory>
+						<filtering>true</filtering>
 						<includes>
 							<include>*</include>
 						</includes>
@@ -257,6 +349,22 @@
 						</includes>
 					</testResource>
 				</testResources>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-clean-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>default-clean</id>
+								<goals>
+									<goal>clean</goal>
+								</goals>
+								<!-- Force clean -->
+								<phase>initialize</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
 			</build>
 		</profile>
 		<profile>
@@ -382,12 +490,14 @@
 				<resources>
 					<resource>
 						<directory>src/main/resources/spring</directory>
+						<filtering>true</filtering>
 						<includes>
 							<include>*</include>
 						</includes>
 					</resource>
 					<resource>
 						<directory>src/main/resources/spring/${test.spring}</directory>
+						<filtering>true</filtering>
 						<includes>
 							<include>*</include>
 						</includes>

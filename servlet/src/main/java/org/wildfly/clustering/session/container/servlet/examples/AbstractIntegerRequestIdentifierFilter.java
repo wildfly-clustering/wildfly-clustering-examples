@@ -7,7 +7,6 @@ package org.wildfly.clustering.session.container.servlet.examples;
 
 import java.util.function.UnaryOperator;
 
-import jakarta.servlet.annotation.WebListener;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -18,7 +17,7 @@ public abstract class AbstractIntegerRequestIdentifierFilter extends AbstractReq
 	private static final long serialVersionUID = -3695484296146028028L;
 
 	AbstractIntegerRequestIdentifierFilter() {
-		super(Integer.class);
+		super(UnaryOperator.identity());
 	}
 
 	@Override
@@ -36,16 +35,5 @@ public abstract class AbstractIntegerRequestIdentifierFilter extends AbstractReq
 		Integer requestId = super.getCurrentRequestId(session);
 		this.writeRequestId(session, requestId);
 		return requestId;
-	}
-
-	/**
-	 * A session listener that stores the initial request identifier for new sessions.
-	 */
-	@WebListener
-	public static class IntegerRequestCountSessionListener extends AbstractRequestIdentifierFilter.RequestCountSessionListener<Integer> {
-		/** Default constructor */
-		public IntegerRequestCountSessionListener() {
-			super(UnaryOperator.identity());
-		}
 	}
 }

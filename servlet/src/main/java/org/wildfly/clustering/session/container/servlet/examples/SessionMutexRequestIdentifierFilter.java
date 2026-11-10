@@ -5,7 +5,8 @@
 
 package org.wildfly.clustering.session.container.servlet.examples;
 
-import jakarta.servlet.annotation.WebFilter;
+import java.io.Serial;
+
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -13,8 +14,8 @@ import jakarta.servlet.http.HttpSession;
  * This implementation may not safe for use by concurrent requests for the same session, depending on the container implementation.
  * @author Paul Ferraro
  */
-@WebFilter(urlPatterns = "/*")
 public class SessionMutexRequestIdentifierFilter extends AbstractIntegerRequestIdentifierFilter {
+	@Serial
 	private static final long serialVersionUID = -642062907208910796L;
 
 	/** Default constructor */

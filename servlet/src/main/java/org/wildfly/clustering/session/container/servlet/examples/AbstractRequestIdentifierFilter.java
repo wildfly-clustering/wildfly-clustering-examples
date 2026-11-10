@@ -24,27 +24,45 @@ import jakarta.servlet.http.HttpSessionListener;
  * @author Paul Ferraro
  * @param <T> the session attribute type
  */
-public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter implements RequestIdentifierProvider {
+public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter implements RequestIdentifierProvider, HttpSessionListener {
 	/** The identifier for requests with no or newly associated sessions. */
 	static final Integer INITIAL_REQUEST_IDENTIFIER = 0;
 
 	@Serial
 	private static final long serialVersionUID = -4671914387598405965L;
 	/** The session attribute type */
-	private final Class<T> type;
+	private final Function<Integer, T> mapper;
 
-	AbstractRequestIdentifierFilter(Class<T> type) {
-		this.type = type;
+	AbstractRequestIdentifierFilter(Function<Integer, T> mapper) {
+		this.mapper = mapper;
+	}
+
+	@Override
+	public void sessionCreated(HttpSessionEvent event) {
+		HttpSession session = event.getSession();
+		session.getServletContext().log(String.format("HttpSessionListener.sessionCreated(%s)", session.getId()));
+		session.setAttribute(REQUEST_ID, this.mapper.apply(INITIAL_REQUEST_ID));
 	}
 
 	@Override
 	protected void doFilter​(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
 		HttpSession session = request.getSession(false);
 		Integer requestId = Optional.ofNullable(session).map(!request.getMethod().equals("HEAD") ? this::getCurrentRequestId : this::getPreviousRequestId).orElse(INITIAL_REQUEST_IDENTIFIER);
+		this.getServletContext().log(String.format("[%d] %s %s%s", requestId, request.getMethod(), request.getRequestURI(), (request.getQueryString() != null) ? "?" + request.getQueryString() : ""));
 		request.setAttribute(REQUEST_ID, requestId);
 		// Record to response header for testing
 		response.setIntHeader(REQUEST_ID, requestId);
-		chain.doFilter(request, response);
+		try {
+			chain.doFilter(request, response);
+		} finally {
+			// Spring Session workaround
+			session = request.getSession(false);
+			// Spring Session defers to the SessionRepository to trigger session creation events - and most neglect to do this!
+			if ((session != null) && session.isNew() && (session.getAttribute(REQUEST_ID) == null)) {
+				this.getServletContext().log("Simulating missing HttpSession creation event omitted by the Spring SessionRepository implementation.");
+				this.sessionCreated(new HttpSessionEvent(session));
+			}
+		}
 	}
 
 	/**
@@ -52,8 +70,9 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 	 * @param session the current session
 	 * @return the request identifier for the current request from the specified session, if one exists.
 	 */
+	@SuppressWarnings("unchecked")
 	T readRequestId(HttpSession session) {
-		return this.type.cast(session.getAttribute(REQUEST_ID));
+		return (T) session.getAttribute(REQUEST_ID);
 	}
 
 	/**
@@ -95,18 +114,5 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 	 */
 	Integer getCurrentRequestId(HttpSession session) {
 		return this.next(this.readRequestId(session));
-	}
-
-	static class RequestCountSessionListener<T> implements HttpSessionListener {
-		private final Function<Integer, T> mapper;
-
-		RequestCountSessionListener(Function<Integer, T> mapper) {
-			this.mapper = mapper;
-		}
-
-		@Override
-		public void sessionCreated(HttpSessionEvent event) {
-			event.getSession().setAttribute(REQUEST_ID, this.mapper.apply(INITIAL_REQUEST_ID));
-		}
 	}
 }

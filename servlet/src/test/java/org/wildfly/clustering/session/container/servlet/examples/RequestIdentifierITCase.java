@@ -15,7 +15,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -67,7 +66,7 @@ public class RequestIdentifierITCase extends AbstractArquillianITCase<Class<? ex
 
 	@RegisterExtension
 	static final ArquillianExtension ARQUILLIAN = new ArquillianExtension();
-	static final String FILTER = "test.filter";
+	static final String FILTER = "test.filter.class";
 	static final String SERVERS = "test.servers";
 	static final String CLIENTS = "test.clients";
 	static final String REQUESTS = "test.requests";
@@ -75,26 +74,6 @@ public class RequestIdentifierITCase extends AbstractArquillianITCase<Class<? ex
 	static final String INTERVAL = "test.interval";
 	static final String FAILOVER_RATIO = "test.failover-ratio";
 	static final String VERBOSE = "test.verbose";
-
-	enum Filter implements Supplier<Class<? extends HttpFilter>> {
-		NON_ATOMIC(NoMutexRequestIdentifierFilter.class),
-		SESSION_MUTEX(SessionMutexRequestIdentifierFilter.class),
-		SESSION_ID_MUTEX(SessionIdentifierMutexRequestIdentifierFilter.class),
-		SESSION_ATTRIBUTE_MUTEX(SessionAttributeMutexRequestIdentifierFilter.class),
-		ATOMIC(AtomicIntegerRequestIdentifierFilter.class),
-		ATOMIC_RESET(ResetAtomicIntegerRequestIdentifierFilter.class),
-		;
-		private Class<? extends HttpFilter> filterClass;
-
-		Filter(Class<? extends HttpFilter> filterClass) {
-			this.filterClass = filterClass;
-		}
-
-		@Override
-		public Class<? extends HttpFilter> get() {
-			return this.filterClass;
-		}
-	}
 
 	private static final RequestIdentifierTester.Configuration CONFIGURATION = new RequestIdentifierTester.Configuration() {
 		private final int servers = Integer.getInteger(SERVERS, 1);
@@ -152,10 +131,19 @@ public class RequestIdentifierITCase extends AbstractArquillianITCase<Class<? ex
 		assertThat(CONFIGURATION.getThreads()).as(THREADS).isGreaterThan(0);
 		assertThat(CONFIGURATION.getInterval()).as(INTERVAL).isGreaterThanOrEqualTo(Duration.ZERO);
 		assertThat(CONFIGURATION.getFailoverRatio()).isBetween(0d, 1d);
-		Filter filter = Optional.ofNullable(System.getProperty(FILTER)).map(Filter::valueOf).orElse(Filter.ATOMIC_RESET);
-		this.filterClass = filter.get();
+		String filterClassName = System.getProperty(FILTER);
+		assertThat(filterClassName).as(FILTER).isNotNull();
+		this.filterClass = loadFilter(filterClassName);
 		this.clusterSize = CONFIGURATION.getServers();
-		System.out.println(String.format("Running distributed request identifier test using filter = %s, servers = %d, clients = %d, requests = %d, threads = %d, interval = %s, failover-ratio = %f", filter, this.clusterSize, CONFIGURATION.getClients(), CONFIGURATION.getRequests(), CONFIGURATION.getThreads(), CONFIGURATION.getInterval(), CONFIGURATION.getFailoverRatio()));
+		System.out.println(String.format("Running distributed request identifier test using filter = %s, servers = %d, clients = %d, requests = %d, threads = %d, interval = %s, failover-ratio = %f", this.filterClass.getSimpleName(), this.clusterSize, CONFIGURATION.getClients(), CONFIGURATION.getRequests(), CONFIGURATION.getThreads(), CONFIGURATION.getInterval(), CONFIGURATION.getFailoverRatio()));
+	}
+
+	private static Class<? extends HttpFilter> loadFilter(String className) {
+		try {
+			return Class.forName(className).asSubclass(HttpFilter.class);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		}
 	}
 
 	@Override

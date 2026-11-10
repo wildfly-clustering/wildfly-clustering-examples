@@ -318,8 +318,9 @@ public class RequestIdentifierTester implements Tester {
 				Map<String, Queue<Long>> result = clientRecord.getRequestIdentifiers();
 				for (Map.Entry<String, Queue<Long>> entry : result.entrySet()) {
 					System.out.println(String.format("\tSession: %s", entry.getKey()));
+					System.out.println(String.format("\t\tRecorded request IDs: %s", entry.getValue().stream().toList()));
+					System.out.println(String.format("\t\t  Sorted request IDs: %s", entry.getValue().stream().sorted().toList()));
 					System.out.println(String.format("\t\tExpected request IDs: %s", Arrays.toString(LongStream.iterate(AbstractRequestIdentifierFilter.INITIAL_REQUEST_IDENTIFIER, Math::incrementExact).limit(this.requests).toArray())));
-					System.out.println(String.format("\t\t  Actual request IDs: %s", entry.getValue().stream().sorted().toList()));
 				}
 				if (uris.size() > 1) {
 					System.out.println("\tLast request ID:");

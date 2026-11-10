@@ -9,6 +9,15 @@
 
 	<context:annotation-config/>
 
+	<!-- Required for HttpSessionListener support -->
+	<bean class="org.springframework.session.web.http.SessionEventHttpSessionListenerAdapter">
+		<constructor-arg>
+			<list>
+				<bean class="${test.filter.class}"/>
+			</list>
+		</constructor-arg>
+	</bean>
+
 	<bean class="org.springframework.session.data.redis.config.annotation.web.http.RedisHttpSessionConfiguration"/>
 	<bean class="org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory">
 		<constructor-arg>

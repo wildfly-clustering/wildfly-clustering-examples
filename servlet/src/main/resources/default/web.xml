@@ -5,4 +5,15 @@
 -->
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_1.xsd" version="6.1">
 	<distributable/>
+	<listener>
+		<listener-class>${test.filter.class}</listener-class>
+	</listener>
+	<filter>
+		<filter-name>requestIdentification</filter-name>
+		<filter-class>${test.filter.class}</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>requestIdentification</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 </web-app>

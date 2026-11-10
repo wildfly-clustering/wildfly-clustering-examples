@@ -9,6 +9,14 @@
 
 	<context:annotation-config/>
 
+	<bean class="org.springframework.session.web.http.SessionEventHttpSessionListenerAdapter">
+		<constructor-arg>
+			<list>
+				<bean class="${test.filter.class}"/>
+			</list>
+		</constructor-arg>
+	</bean>
+
 	<hz:hazelcast id="instance">
 		<hz:config>
 			<hz:cluster-name>sessions</hz:cluster-name>

@@ -9,6 +9,15 @@
 
 	<context:annotation-config/>
 
+	<!-- Required for HttpSessionListener support -->
+	<bean class="org.springframework.session.web.http.SessionEventHttpSessionListenerAdapter">
+		<constructor-arg>
+			<list>
+				<bean class="${test.filter.class}"/>
+			</list>
+		</constructor-arg>
+	</bean>
+
 	<!-- We cannot use org.infinispan.spring.remote.session.configuration.InfinispanRemoteHttpSessionConfiguration here -->
 	<!-- This bean requires configuration of its cacheName, but does not expose a mechanism to configure it (other than via annotation) -->
 	<bean id="httpSession" class="org.springframework.session.config.annotation.web.http.SpringHttpSessionConfiguration"/>

@@ -7,7 +7,6 @@ package org.wildfly.clustering.session.container.servlet.examples;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -15,12 +14,11 @@ import jakarta.servlet.http.HttpSession;
  * This implementation is safe for use by concurrent requests for the same session, on any spec-compliant servlet container.
  * @author Paul Ferraro
  */
-@WebFilter(urlPatterns = "/*")
-public class ResetAtomicIntegerRequestIdentifierFilter extends AbstractAtomicIntegerRequestIdentifierFilter {
+public class AtomicIntegerResetRequestIdentifierFilter extends AbstractAtomicIntegerRequestIdentifierFilter {
 	private static final long serialVersionUID = 2933347474895361068L;
 
 	/** Default constructor */
-	public ResetAtomicIntegerRequestIdentifierFilter() {
+	public AtomicIntegerResetRequestIdentifierFilter() {
 		// Do nothing
 	}
 

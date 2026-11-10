@@ -45,40 +45,40 @@ Runs against a specific version of `test.container`.
 test.spring=hazelcast|infinispan/embedded|infinispan/remote|redis::
 When specified, the web application will be instrumented to use Spring Session with the specified session repository implementation, overriding the configured container's default session management.
 
-test.filter=NON_ATOMIC|SESSION_MUTEX|SESSION_ID_MUTEX|SESSION_ATTRIBUTE_MUTEX|ATOMIC|ATOMIC_RESET::
-Default: ATOMIC_RESET
+test.filter=no-mutex|session-mutex|session-id-mutex|session-attribute-mutex|atomic|atomic-reset::
+Default: atomic-reset
 +
-Specifies the filter implementation used by the test application:
+Specifies the filter implementation to use in the deployed test application:
 +
-NON_ATOMIC:::
+no-mutex:::
 +
 Request identifiers are stored in the HttpSession using an immutable Integer, with no regard for concurrency/atomicity.
-Expect dirty reads and/or lost writes when `test.threads` &gt; 0.
+Expect dirty reads when `test.threads` &gt; 0 and lost-writes when.
 +
-SESSION_MUTEX:::
+session-mutex:::
 +
 Request identifiers are stored in the HttpSession using an immutable Integer, using the object monitor of the HttpSession to ensure thread-safety.
-This implementation relies on assumptions not guaranteed by the Jakarta Servlet specification.  It may behave correctly, or the same as NON_ATOMIC, depending on the container implementations, and is therefore not portable.
+This implementation relies on assumptions not guaranteed by the Jakarta Servlet specification.  It may behave correctly, or the same as `no-mutex`, depending on the container implementations, and is therefore not portable.
 +
-SESSION_IDENTIFER_MUTEX:::
+session-id-mutex:::
 +
 Request identifiers are stored in the HttpSession using an immutable Integer, using the object monitor of the session identifier to ensure thread-safety.
-This implementation relies on assumptions not guaranteed by the Jakarta Servlet specification.  It may behave correctly, or the same as NON_ATOMIC, depending on the container implementations, and is therefore not portable.
+This implementation relies on assumptions not guaranteed by the Jakarta Servlet specification.  It may behave correctly, or the same as `no-mutex`, depending on the container implementations, and is therefore not portable.
 +
-SESSION_ATTRIBUTE_MUTEX:::
+session-attribute-mutex:::
 +
 Request identifiers are stored in the HttpSession using an immutable Integer, using the object monitor of a separate session attribute to ensure thread-safety.
 This implementation should be portable to any distributed container.
 +
-ATOMIC:::
+atomic:::
 +
 Request identifiers are stored in the HttpSession using a mutable AtomicInteger.
 While this implementation is thread-safe, and complies with the application requirements specified by the Jakarta Servlet specification, it fails in most distributed containers when `test.servers` is greater than 1.
 The exception is WildFly, which always assumes that a given session attribute is mutable unless the object is of a known immutable type, or was annotated/described to be immutable.
 +
-ATOMIC_RESET:::
+atomic-reset:::
 +
-Same as ATOMIC, but adds an innocuous call to `HttpSession.setAttribute(...)` after incrementing the AtomicInteger, to accommodate distributed containers that require such semantics.
+Same as `atomic`, but adds an innocuous call to `HttpSession.setAttribute(...)` after incrementing the AtomicInteger, to accommodate distributed containers that require such semantics.
 This implementation should be portable to any distributed container.
 
 test.servers=#::
@@ -110,9 +110,9 @@ Specifies the interval between request invocations per client thread, specified 
 +
 e.g. `test.interval=PT0.1s` indicates an 100 millisecond interval.
 +
-When `test.threads` = 0, requests per client are sent at a fixed interval.
+When `test.threads` = 1`, requests per client are sent at a fixed interval.
 +
-When `test.threads` &gt; 0, requests per client are sent at a fixed rate.
+When `test.threads` &gt; 1, requests per client are sent at a fixed rate.
 
 test.failover-ratio=#.##::
 Default: 0.0
@@ -131,20 +131,20 @@ e.g.
 
 === Examples
 
-The following command will deploy the example application using the NON_ATOMIC filter implementation to a single WildFly server, and validate the application state of a single client after 100 sequential requests:
+The following command will deploy the example application using the `non-atomic` filter implementation to a single WildFly server, and validate the application state of a single client after 100 sequential requests:
 
 ```shell
-mvn verify -Dtest.container=wildfly -Dtest.filter=NON_ATOMIC
+mvn verify -Dtest.container=wildfly -Dtest.filter=non-atomic
 ```
 
-The following command will deploy the example application using the ATOMIC filter implementation to a cluster of 3 WildFly servers, and validate the application state of 10 clients after 10000 requests via 4 threads each, using a failover-ratio of 100%, i.e. with random routing:
+The following command will deploy the example application using the `atomic` filter implementation to a cluster of 3 WildFly servers, and validate the application state of 10 clients after 10000 requests via 4 threads each, using a failover-ratio of 100%, i.e. with random routing:
 
 ```shell
-mvn verify -Dtest.container=wildfly -Dtest.filter=ATOMIC -Dtest.servers=3 -Dtest.clients=10 -Dtest.requests=10000 -Dtest.threads=4 -Dtest.failover-ratio=1.0
+mvn verify -Dtest.container=wildfly -Dtest.filter=non-atomic -Dtest.servers=3 -Dtest.clients=10 -Dtest.requests=10000 -Dtest.threads=4 -Dtest.failover-ratio=1.0
 ```
 
-The following command will deploy the example application using the SESSION_IDENTIFER_MUTEX filter implementation, instrumented with Spring Session with a Redis session repository, to 2 Tomcat servers, and validate the application state of 10 clients after 5000 requests via 2 threads each, using a failover-ratio of 10%:
+The following command will deploy the example application using the `session-attribute-mutex` filter implementation, instrumented with Spring Session with a Redis session repository, to 2 Tomcat servers, and validate the application state of 10 clients after 5000 requests via 2 threads each, using a failover-ratio of 10%:
 
 ```shell
-mvn verify -Dtest.container=tomcat -Dtest.spring=redis -Dtest.servers=2 -Dtest.filter=SESSION_ATTRIBUTE_MUTEX -Dtest.clients=10 -Dtest.requests=1000 -Dtest.threads=2 -Dtest.failover-ratio=0.1
+mvn verify -Dtest.container=tomcat -Dtest.spring=redis -Dtest.servers=2 -Dtest.filter=session-attribute-mutex -Dtest.clients=10 -Dtest.requests=1000 -Dtest.threads=2 -Dtest.failover-ratio=0.1
 ```
