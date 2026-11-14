@@ -1,0 +1,204 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+package org.wildfly.clustering.session.container.servlet.examples;
+
+import static org.assertj.core.api.Assertions.*;
+
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import jakarta.servlet.http.HttpFilter;
+
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.arquillian.junit5.ArquillianExtension;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.wildfly.clustering.arquillian.DeploymentContainer;
+import org.wildfly.clustering.container.ContainerLifecycle;
+import org.wildfly.clustering.junit.AbstractArquillianITCase;
+
+/**
+ * @author Paul Ferraro
+ */
+public class RequestIdentifierITCase extends AbstractArquillianITCase<Class<? extends HttpFilter>, WebArchive> {
+
+	static {
+		// OpenLiberty's remote arquillian container is hard-coded to use HTTPS
+		// To avoid certificate importation, we will workaround by trusting everything
+		if (Boolean.getBoolean("test.trust-all-certs")) {
+			try {
+				SSLContext context = SSLContext.getInstance("TLS");
+				context.init(null, new TrustManager[] { new X509TrustManager() {
+					@Override
+					public X509Certificate[] getAcceptedIssuers() {
+						return null;
+					}
+
+					@Override
+					public void checkServerTrusted(X509Certificate[] chain, String authType) {
+					}
+
+					@Override
+					public void checkClientTrusted(X509Certificate[] chain, String authType) {
+					}
+				}}, null);
+				SSLContext.setDefault(context);
+			} catch (NoSuchAlgorithmException | KeyManagementException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+	}
+
+	@RegisterExtension
+	static final ArquillianExtension ARQUILLIAN = new ArquillianExtension();
+	static final String FILTER = "test.filter.class";
+	static final String SERVERS = "test.servers";
+	static final String CLIENTS = "test.clients";
+	static final String REQUESTS = "test.requests";
+	static final String THREADS = "test.threads";
+	static final String INTERVAL = "test.interval";
+	static final String FAILOVER_RATIO = "test.failover-ratio";
+	static final String VERBOSE = "test.verbose";
+
+	private static final RequestIdentifierTester.Configuration CONFIGURATION = new RequestIdentifierTester.Configuration() {
+		private final int servers = Integer.getInteger(SERVERS, 1);
+		private final int clients = Integer.getInteger(CLIENTS, 1);
+		private final int requests = Integer.getInteger(REQUESTS, 100);
+		private final int threads = Integer.getInteger(THREADS, 1);
+		private final Duration interval = Optional.ofNullable(System.getProperty(INTERVAL)).map(Duration::parse).orElse(Duration.ZERO);
+		private final double failoverRatio = Optional.ofNullable(System.getProperty(FAILOVER_RATIO)).map(Double::valueOf).orElse(0d);
+		private final boolean verbose = Boolean.getBoolean(VERBOSE);
+
+		@Override
+		public int getServers() {
+			return this.servers;
+		}
+
+		@Override
+		public int getClients() {
+			return this.clients;
+		}
+
+		@Override
+		public int getRequests() {
+			return this.requests;
+		}
+
+		@Override
+		public int getThreads() {
+			return this.threads;
+		}
+
+		@Override
+		public Duration getInterval() {
+			return this.interval;
+		}
+
+		@Override
+		public double getFailoverRatio() {
+			return this.failoverRatio;
+		}
+
+		@Override
+		public boolean isVerbose() {
+			return this.verbose;
+		}
+	};
+
+	private final Class<? extends HttpFilter> filterClass;
+	private final int clusterSize;
+
+	public RequestIdentifierITCase() {
+		super(() -> new RequestIdentifierTester(CONFIGURATION));
+		assertThat(CONFIGURATION.getServers()).as(SERVERS).isGreaterThan(0).isLessThan(5);
+		assertThat(CONFIGURATION.getClients()).as(CLIENTS).isGreaterThan(0);
+		assertThat(CONFIGURATION.getRequests()).as(REQUESTS).isGreaterThan(0);
+		assertThat(CONFIGURATION.getThreads()).as(THREADS).isGreaterThan(0);
+		assertThat(CONFIGURATION.getInterval()).as(INTERVAL).isGreaterThanOrEqualTo(Duration.ZERO);
+		assertThat(CONFIGURATION.getFailoverRatio()).isBetween(0d, 1d);
+		String filterClassName = System.getProperty(FILTER);
+		assertThat(filterClassName).as(FILTER).isNotNull();
+		this.filterClass = loadFilter(filterClassName);
+		this.clusterSize = CONFIGURATION.getServers();
+		System.out.println(String.format("Running distributed request identifier test using filter = %s, servers = %d, clients = %d, requests = %d, threads = %d, interval = %s, failover-ratio = %f", this.filterClass.getSimpleName(), this.clusterSize, CONFIGURATION.getClients(), CONFIGURATION.getRequests(), CONFIGURATION.getThreads(), CONFIGURATION.getInterval(), CONFIGURATION.getFailoverRatio()));
+	}
+
+	private static Class<? extends HttpFilter> loadFilter(String className) {
+		try {
+			return Class.forName(className).asSubclass(HttpFilter.class);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
+
+	@Override
+	public WebArchive createArchive(Class<? extends HttpFilter> filter) {
+		WebArchive archive = ShrinkWrap.create(WebArchive.class, filter.getSimpleName() + ".war")
+				.addClasses(SessionServlet.class, RequestIdentifierProvider.class)
+				;
+		// Add servlet class (and its superclasses)
+		Class<?> applicationClass = filter;
+		while (applicationClass != HttpFilter.class) {
+			archive.addClass(applicationClass);
+			applicationClass = applicationClass.getSuperclass();
+		}
+		// Add a container-specific deployment descriptor, if necessary
+		String containerResourceName = String.format("%s-web.xml", System.getProperty("test.container"));
+		URL containerResource = filter.getClassLoader().getResource(containerResourceName);
+		if (containerResource != null) {
+			archive.addAsWebInfResource(containerResource, containerResourceName);
+		}
+		// Add any auxiliary resources
+		File webResources = Path.of(System.getProperty("test.resources")).toFile();
+		if (webResources.exists()) {
+			for (File webResource : webResources.listFiles()) {
+				if (webResource.isFile()) {
+					archive.addAsWebInfResource(webResource);
+				}
+			}
+		}
+		// Add any auxiliary libraries
+		String libs = System.getProperty("test.lib");
+		if (libs != null) {
+			File libDirectory = Path.of(libs).toFile();
+			if (libDirectory.exists()) {
+				for (File lib : libDirectory.listFiles((dir, name) -> name.endsWith(".jar"))) {
+					archive.addAsLibrary(lib);
+				}
+			}
+		}
+		// Output contents of WAR, for verification
+		System.out.println(archive.toString(true));
+		return archive;
+	}
+
+	@Override
+	public List<DeploymentContainer> getDeploymentContainers() {
+		return super.getDeploymentContainers().subList(0, this.clusterSize);
+	}
+
+	@RunAsClient
+	@Test
+	void test() {
+		try (ContainerLifecycle container = ContainerLifecycle.from(System.getProperties())) {
+			container.start();
+			this.accept(this.filterClass);
+			container.stop();
+		}
+	}
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<payara-web-app>
+	<session-config>
+		<session-manager persistence-type="hazelcast">
+		</session-manager>
+	</session-config>
+</payara-web-app>
