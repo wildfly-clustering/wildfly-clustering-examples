@@ -23,14 +23,6 @@
 		<test.container.version>latest</test.container.version>
 		<test.filter.class>org.wildfly.clustering.session.container.servlet.examples.AtomicIntegerResetRequestIdentifierFilter</test.filter.class>
 		<test.args/>
-		<http.port.1>8080</http.port.1>
-		<http.port.2>8081</http.port.2>
-		<http.port.3>8082</http.port.3>
-		<http.port.4>8083</http.port.4>
-		<https.port.1>8443</https.port.1>
-		<https.port.2>8444</https.port.2>
-		<https.port.3>8445</https.port.3>
-		<https.port.4>8446</https.port.4>
 	</properties>
 
 	<dependencyManagement>
@@ -134,7 +126,7 @@
 			<dependency>
 				<groupId>org.wildfly.clustering</groupId>
 				<artifactId>wildfly-clustering-bom</artifactId>
-				<version>12.0.5.Final</version>
+				<version>12.0.7.Final</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

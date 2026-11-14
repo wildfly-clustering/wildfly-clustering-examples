@@ -6,12 +6,12 @@
 <arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 	<extension qualifier="OCI">
 		<property name="oci:image">icr.io/appcafe/open-liberty:full-java25-openj9-ubi-minimal</property>
-		<property name="oci:network-mode">host</property>
+		<property name="oci:expose">httpPort httpsPort</property>
 		<property name="oci:start-message-pattern">.*\QCWPKI0063W\E.*</property>
 		<property name="env:KEYSTORE_REQUIRED">true</property>
 		<property name="ref:HTTP_PORT">httpPort</property>
 		<property name="ref:HTTPS_PORT">httpsPort</property>
-		<property name="env:JVM_ARGS">-Dhttp.port=$HTTP_PORT -Dhttps.port=$HTTPS_PORT --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED</property>
+		<property name="env:JVM_ARGS">--add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED</property>
 		<property name="file:${project.basedir}/src/test/resources/${test.container}">/opt/ol/wlp/usr/servers/defaultServer</property>
 		<property name="file:${project.basedir}/target/lib">/opt/ol/wlp/usr/shared/resources</property>
 	</extension>
@@ -19,8 +19,8 @@
 		<container qualifier="server-1" mode="manual">
 			<configuration>
 				<property name="hostName">localhost</property>
-				<property name="httpPort">${http.port.1}</property>
-				<property name="httpsPort">${https.port.1}</property>
+				<property name="httpPort">8080</property>
+				<property name="httpsPort">8443</property>
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 			</configuration>
@@ -28,8 +28,8 @@
 		<container qualifier="server-2" mode="manual">
 			<configuration>
 				<property name="hostName">localhost</property>
-				<property name="httpPort">${http.port.2}</property>
-				<property name="httpsPort">${https.port.2}</property>
+				<property name="httpPort">8081</property>
+				<property name="httpsPort">8444</property>
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 			</configuration>
@@ -37,8 +37,8 @@
 		<container qualifier="server-3" mode="manual">
 			<configuration>
 				<property name="hostName">localhost</property>
-				<property name="httpPort">${http.port.3}</property>
-				<property name="httpsPort">${https.port.3}</property>
+				<property name="httpPort">8082</property>
+				<property name="httpsPort">8445</property>
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 			</configuration>
@@ -46,8 +46,8 @@
 		<container qualifier="server-4" mode="manual">
 			<configuration>
 				<property name="hostName">localhost</property>
-				<property name="httpPort">${http.port.4}</property>
-				<property name="httpsPort">${https.port.4}</property>
+				<property name="httpPort">8083</property>
+				<property name="httpsPort">8446</property>
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 			</configuration>

@@ -41,7 +41,7 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 	public void sessionCreated(HttpSessionEvent event) {
 		HttpSession session = event.getSession();
 		session.getServletContext().log(String.format("HttpSessionListener.sessionCreated(%s)", session.getId()));
-		session.setAttribute(REQUEST_ID, this.mapper.apply(INITIAL_REQUEST_ID));
+		session.setAttribute(REQUEST_ID_KEY, this.mapper.apply(INITIAL_REQUEST_ID));
 	}
 
 	@Override
@@ -49,16 +49,16 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 		HttpSession session = request.getSession(false);
 		Integer requestId = Optional.ofNullable(session).map(!request.getMethod().equals("HEAD") ? this::getCurrentRequestId : this::getPreviousRequestId).orElse(INITIAL_REQUEST_IDENTIFIER);
 		this.getServletContext().log(String.format("[%d] %s %s%s", requestId, request.getMethod(), request.getRequestURI(), (request.getQueryString() != null) ? "?" + request.getQueryString() : ""));
-		request.setAttribute(REQUEST_ID, requestId);
+		request.setAttribute(REQUEST_ID_KEY, requestId);
 		// Record to response header for testing
-		response.setIntHeader(REQUEST_ID, requestId);
+		response.setIntHeader(REQUEST_ID_KEY, requestId);
 		try {
 			chain.doFilter(request, response);
 		} finally {
 			// Spring Session workaround
 			session = request.getSession(false);
 			// Spring Session defers to the SessionRepository to trigger session creation events - and most neglect to do this!
-			if ((session != null) && session.isNew() && (session.getAttribute(REQUEST_ID) == null)) {
+			if ((session != null) && session.isNew() && (session.getAttribute(REQUEST_ID_KEY) == null)) {
 				this.getServletContext().log("Simulating missing HttpSession creation event omitted by the Spring SessionRepository implementation.");
 				this.sessionCreated(new HttpSessionEvent(session));
 			}
@@ -72,7 +72,7 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 	 */
 	@SuppressWarnings("unchecked")
 	T readRequestId(HttpSession session) {
-		return (T) session.getAttribute(REQUEST_ID);
+		return (T) session.getAttribute(REQUEST_ID_KEY);
 	}
 
 	/**
@@ -81,7 +81,7 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 	 * @param requestId the current request identifier
 	 */
 	void writeRequestId(HttpSession session, T requestId) {
-		session.setAttribute(REQUEST_ID, requestId);
+		session.setAttribute(REQUEST_ID_KEY, requestId);
 	}
 
 	/**

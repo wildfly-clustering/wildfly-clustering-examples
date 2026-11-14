@@ -6,7 +6,7 @@
 <arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 	<extension qualifier="OCI">
 		<property name="oci:image">quay.io/wildfly/wildfly:${test.container.version}</property>
-		<property name="oci:network-mode">host</property>
+		<property name="oci:expose">managementPort port</property>
 		<property name="oci:command">/opt/jboss/wildfly/bin/start.sh</property>
 		<property name="oci:start-message-pattern">.*\QWFLYSRV0025\E.*</property>
 		<property name="ref:WILDFLY_USERNAME">username</property>
@@ -21,8 +21,9 @@
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 				<property name="portOffset">0</property>
-				<property name="port">${http.port.1}</property>
-				<property name="managementPort">${management.port.1}</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9990</property>
+				<property name="port">8080</property>
 			</configuration>
 		</container>
 		<container qualifier="server-2" mode="manual">
@@ -30,8 +31,9 @@
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 				<property name="portOffset">1</property>
-				<property name="port">${http.port.2}</property>
-				<property name="managementPort">${management.port.2}</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9991</property>
+				<property name="port">8081</property>
 			</configuration>
 		</container>
 		<container qualifier="server-3" mode="manual">
@@ -39,8 +41,9 @@
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 				<property name="portOffset">2</property>
-				<property name="port">${http.port.3}</property>
-				<property name="managementPort">${management.port.3}</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9992</property>
+				<property name="port">8082</property>
 			</configuration>
 		</container>
 		<container qualifier="server-4" mode="manual">
@@ -48,8 +51,9 @@
 				<property name="username">admin</property>
 				<property name="password">admin</property>
 				<property name="portOffset">3</property>
-				<property name="port">${http.port.4}</property>
-				<property name="managementPort">${management.port.4}</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9993</property>
+				<property name="port">8083</property>
 			</configuration>
 		</container>
 	</group>

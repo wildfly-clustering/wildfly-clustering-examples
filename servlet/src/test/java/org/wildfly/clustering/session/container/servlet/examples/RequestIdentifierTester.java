@@ -59,7 +59,7 @@ import org.wildfly.clustering.junit.Tester;
  */
 public class RequestIdentifierTester implements Tester {
 	private static final Function<HttpResponse<Void>, Optional<String>> SESSION = response -> response.headers().firstValue(SessionServlet.SESSION);
-	private static final Function<HttpResponse<Void>, OptionalLong> REQUEST_ID = response -> response.headers().firstValueAsLong(RequestIdentifierProvider.REQUEST_ID);
+	private static final Function<HttpResponse<Void>, OptionalLong> REQUEST_ID = response -> response.headers().firstValueAsLong(RequestIdentifierProvider.REQUEST_ID_KEY);
 	private static final Consumer<HttpResponse<Void>> REPORTER = response -> System.out.println("Cookies: " + response.headers().allValues("Set-Cookie"));
 
 	/** Encapsulates the configuration of this tester */

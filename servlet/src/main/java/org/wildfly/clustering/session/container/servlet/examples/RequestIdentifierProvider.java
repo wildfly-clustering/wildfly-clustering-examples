@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public interface RequestIdentifierProvider {
 	/** The name of the header/attribute storing the request index */
-	String REQUEST_ID = "x-request-id";
+	String REQUEST_ID_KEY = "x-request-id";
 	/** The identifier for requests with no or newly associated sessions. */
 	Integer INITIAL_REQUEST_ID = 0;
 
@@ -23,6 +23,6 @@ public interface RequestIdentifierProvider {
 	 * @return the unique request identifier for the current session.
 	 */
 	default Integer getRequestId(HttpServletRequest request) {
-		return (Integer) request.getAttribute(REQUEST_ID);
+		return (Integer) request.getAttribute(REQUEST_ID_KEY);
 	}
 }
