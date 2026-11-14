@@ -9,7 +9,7 @@
 	</featureManager>
 
 	<!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
-	<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${http.port}" httpsPort="${https.port}"/>
+	<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${HTTP_PORT}" httpsPort="${HTTPS_PORT}"/>
 
 	<httpSessionCache cacheManagerRef="sessionCacheManager"/>
 
