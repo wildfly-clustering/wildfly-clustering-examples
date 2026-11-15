@@ -43,5 +43,33 @@
 				<property name="shutdownPort">9389</property>
 			</configuration>
 		</container>
+		<container qualifier="server-5" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">8480</property>
+				<property name="jmxPort">8489</property>
+				<property name="shutdownPort">9489</property>
+			</configuration>
+		</container>
+		<container qualifier="server-6" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">8580</property>
+				<property name="jmxPort">8589</property>
+				<property name="shutdownPort">9589</property>
+			</configuration>
+		</container>
+		<container qualifier="server-7" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">8680</property>
+				<property name="jmxPort">8689</property>
+				<property name="shutdownPort">9689</property>
+			</configuration>
+		</container>
+		<container qualifier="server-8" mode="manual">
+			<configuration>
+				<property name="bindHttpPort">8780</property>
+				<property name="jmxPort">8789</property>
+				<property name="shutdownPort">9789</property>
+			</configuration>
+		</container>
 	</group>
 </arquillian>

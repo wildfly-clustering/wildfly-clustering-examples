@@ -125,7 +125,7 @@ public class RequestIdentifierITCase extends AbstractArquillianITCase<Class<? ex
 
 	public RequestIdentifierITCase() {
 		super(() -> new RequestIdentifierTester(CONFIGURATION));
-		assertThat(CONFIGURATION.getServers()).as(SERVERS).isGreaterThan(0).isLessThan(5);
+		assertThat(CONFIGURATION.getServers()).as(SERVERS).isGreaterThan(0);
 		assertThat(CONFIGURATION.getClients()).as(CLIENTS).isGreaterThan(0);
 		assertThat(CONFIGURATION.getRequests()).as(REQUESTS).isGreaterThan(0);
 		assertThat(CONFIGURATION.getThreads()).as(THREADS).isGreaterThan(0);
@@ -189,7 +189,9 @@ public class RequestIdentifierITCase extends AbstractArquillianITCase<Class<? ex
 
 	@Override
 	public List<DeploymentContainer> getDeploymentContainers() {
-		return super.getDeploymentContainers().subList(0, this.clusterSize);
+		List<DeploymentContainer> available = super.getDeploymentContainers();
+		assertThat(this.clusterSize).as(SERVERS).isLessThanOrEqualTo(available.size());
+		return available.subList(0, this.clusterSize);
 	}
 
 	@RunAsClient

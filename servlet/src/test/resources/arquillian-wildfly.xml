@@ -56,5 +56,45 @@
 				<property name="port">8083</property>
 			</configuration>
 		</container>
+		<container qualifier="server-5" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">4</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9994</property>
+				<property name="port">8083</property>
+			</configuration>
+		</container>
+		<container qualifier="server-6" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">5</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9995</property>
+				<property name="port">8083</property>
+			</configuration>
+		</container>
+		<container qualifier="server-7" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">6</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9996</property>
+				<property name="port">8083</property>
+			</configuration>
+		</container>
+		<container qualifier="server-8" mode="manual">
+			<configuration>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+				<property name="portOffset">7</property>
+				<property name="managementAddress">localhost</property>
+				<property name="managementPort">9997</property>
+				<property name="port">8083</property>
+			</configuration>
+		</container>
 	</group>
 </arquillian>

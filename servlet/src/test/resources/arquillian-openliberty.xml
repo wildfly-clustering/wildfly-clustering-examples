@@ -52,5 +52,41 @@
 				<property name="password">admin</property>
 			</configuration>
 		</container>
+		<container qualifier="server-5" mode="manual">
+			<configuration>
+				<property name="hostName">localhost</property>
+				<property name="httpPort">8084</property>
+				<property name="httpsPort">8447</property>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+			</configuration>
+		</container>
+		<container qualifier="server-6" mode="manual">
+			<configuration>
+				<property name="hostName">localhost</property>
+				<property name="httpPort">8085</property>
+				<property name="httpsPort">8448</property>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+			</configuration>
+		</container>
+		<container qualifier="server-7" mode="manual">
+			<configuration>
+				<property name="hostName">localhost</property>
+				<property name="httpPort">8086</property>
+				<property name="httpsPort">8449</property>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+			</configuration>
+		</container>
+		<container qualifier="server-8" mode="manual">
+			<configuration>
+				<property name="hostName">localhost</property>
+				<property name="httpPort">8087</property>
+				<property name="httpsPort">8450</property>
+				<property name="username">admin</property>
+				<property name="password">admin</property>
+			</configuration>
+		</container>
 	</group>
 </arquillian>
