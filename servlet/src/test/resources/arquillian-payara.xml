@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Copyright The WildFly Authors
+	SPDX-License-Identifier: Apache-2.0
+-->
+<arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+	<extension qualifier="OCI">
+		<property name="oci:image">${test.container.image}</property>
+		<property name="oci:expose">httpPort</property>
+		<property name="oci:start-message-pattern">.*\Qready in\E.*</property>
+		<property name="ref:payaramicro_port">httpPort</property>
+		<property name="env:payaramicro_hzConfigFile">/opt/payara/hazelcast-config.xml</property>
+		<property name="file:${project.basedir}/src/test/resources/${test.container}">/opt/payara</property>
+		<property name="file:${fish.payara.arquillian:payara-micro-deployer:war}">/opt/payara/deployments/payara-micro-deployer.war</property>
+	</extension>
+	<group qualifier="payara" default="true">
+		<container qualifier="server-1" mode="manual">
+			<configuration>
+				<property name="httpPort">8080</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-2" mode="manual">
+			<configuration>
+				<property name="httpPort">8081</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-3" mode="manual">
+			<configuration>
+				<property name="httpPort">8082</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-4" mode="manual">
+			<configuration>
+				<property name="httpPort">8083</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-5" mode="manual">
+			<configuration>
+				<property name="httpPort">8084</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-6" mode="manual">
+			<configuration>
+				<property name="httpPort">8085</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-7" mode="manual">
+			<configuration>
+				<property name="httpPort">8086</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-8" mode="manual">
+			<configuration>
+				<property name="httpPort">8087</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+	</group>
+</arquillian>
