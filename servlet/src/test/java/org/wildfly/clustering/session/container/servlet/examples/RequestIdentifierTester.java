@@ -8,6 +8,8 @@ package org.wildfly.clustering.session.container.servlet.examples;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.CookieStore;
+import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -138,7 +140,7 @@ public class RequestIdentifierTester implements Tester {
 			if (clientExecutor != null) {
 				this.closeTasks.add(clientExecutor::shutdown);
 			}
-			this.clients.add(Map.entry(HttpClient.newBuilder().cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL)).build(), (clientExecutor != null) ? clientExecutor : Runnable::run));
+			this.clients.add(Map.entry(HttpClient.newBuilder().cookieHandler(new DefaultCookieManager()).build(), (clientExecutor != null) ? clientExecutor : Runnable::run));
 		}
 		Random random = new Random();
 		double failoverRatio = configuration.getFailoverRatio();
@@ -405,5 +407,65 @@ public class RequestIdentifierTester implements Tester {
 	@Override
 	public void close() {
 		this.closeTasks.descendingIterator().forEachRemaining(Runnable::run);
+	}
+
+	static class DefaultCookieManager extends CookieManager {
+		private static final System.Logger LOGGER = System.getLogger(DefaultCookieStore.class.getCanonicalName());
+
+		DefaultCookieManager() {
+			super(new DefaultCookieStore(new CookieManager(null, null).getCookieStore()), CookiePolicy.ACCEPT_ALL);
+		}
+
+		@Override
+		public Map<String, List<String>> get(URI uri, Map<String, List<String>> requestHeaders) throws IOException {
+			Map<String, List<String>> result = super.get(uri, requestHeaders);
+			LOGGER.log(System.Logger.Level.INFO, "DefaultCookieManager.get({0}, {1}) = {2}", uri, requestHeaders, result);
+			return result;
+		}
+	}
+
+	static class DefaultCookieStore implements CookieStore {
+		private static final System.Logger LOGGER = System.getLogger(DefaultCookieStore.class.getCanonicalName());
+
+		private final CookieStore store;
+
+		DefaultCookieStore(CookieStore store) {
+			this.store = store;
+		}
+
+		@Override
+		public void add(URI uri, HttpCookie cookie) {
+			// JSESSIONIDVERSION cookie causes IllegalArgumentException on failover requests
+			if (cookie.getValue().contains(":")) {
+				LOGGER.log(System.Logger.Level.WARNING, "Forcing cookie {0} with value {1} to use version {2}", cookie.getName(), cookie.getValue(), 0);
+				cookie.setVersion(0);
+			}
+			this.store.add(uri, cookie);
+		}
+
+		@Override
+		public List<HttpCookie> get(URI uri) {
+			return this.store.get(uri);
+		}
+
+		@Override
+		public List<HttpCookie> getCookies() {
+			return this.store.getCookies();
+		}
+
+		@Override
+		public List<URI> getURIs() {
+			return this.store.getURIs();
+		}
+
+		@Override
+		public boolean remove(URI uri, HttpCookie cookie) {
+			return this.store.remove(uri, cookie);
+		}
+
+		@Override
+		public boolean removeAll() {
+			return this.store.removeAll();
+		}
 	}
 }

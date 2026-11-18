@@ -30,6 +30,8 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 
 	@Serial
 	private static final long serialVersionUID = -4671914387598405965L;
+	/** Logger for this filter */
+	private final System.Logger logger = System.getLogger(this.getClass().getCanonicalName());
 	/** The session attribute type */
 	private final Function<Integer, T> mapper;
 
@@ -40,8 +42,12 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 	@Override
 	public void sessionCreated(HttpSessionEvent event) {
 		HttpSession session = event.getSession();
-		session.getServletContext().log(String.format("HttpSessionListener.sessionCreated(%s)", session.getId()));
-		session.setAttribute(REQUEST_ID_KEY, this.mapper.apply(INITIAL_REQUEST_ID));
+		this.logger.log(System.Logger.Level.INFO, "HttpSessionListener.sessionCreated({0})", session.getId());
+		if (session.isNew()) {
+			session.setAttribute(REQUEST_ID_KEY, this.mapper.apply(INITIAL_REQUEST_ID));
+		} else {
+			this.logger.log(System.Logger.Level.WARNING, "Servlet specification violation: HttpSessionListener.sessionCreated(...) event was triggered for an existing session!");
+		}
 	}
 
 	@Override
@@ -50,8 +56,6 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 		Integer requestId = Optional.ofNullable(session).map(!request.getMethod().equals("HEAD") ? this::getCurrentRequestId : this::getPreviousRequestId).orElse(INITIAL_REQUEST_IDENTIFIER);
 		this.getServletContext().log(String.format("[%d] %s %s%s", requestId, request.getMethod(), request.getRequestURI(), (request.getQueryString() != null) ? "?" + request.getQueryString() : ""));
 		request.setAttribute(REQUEST_ID_KEY, requestId);
-		// Record to response header for testing
-		response.setIntHeader(REQUEST_ID_KEY, requestId);
 		try {
 			chain.doFilter(request, response);
 		} finally {
@@ -59,7 +63,7 @@ public abstract class AbstractRequestIdentifierFilter<T> extends HttpFilter impl
 			session = request.getSession(false);
 			// Spring Session defers to the SessionRepository to trigger session creation events - and most neglect to do this!
 			if ((session != null) && session.isNew() && (session.getAttribute(REQUEST_ID_KEY) == null)) {
-				this.getServletContext().log("Simulating missing HttpSession creation event omitted by the Spring SessionRepository implementation.");
+				this.logger.log(System.Logger.Level.WARNING, "Servlet specification violation: manually triggering missing HttpSession creation event");
 				this.sessionCreated(new HttpSessionEvent(session));
 			}
 		}

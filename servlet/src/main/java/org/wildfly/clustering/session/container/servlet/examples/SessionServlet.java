@@ -44,7 +44,13 @@ public class SessionServlet extends HttpServlet implements RequestIdentifierProv
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.addIntHeader(REQUEST_ID_KEY, this.getRequestId(request));
+
 		super.service(request, response);
+	}
+
+	@Override
+	protected void doHead(HttpServletRequest request, HttpServletResponse response) {
+		this.doGet(request, response);
 	}
 
 	@Override

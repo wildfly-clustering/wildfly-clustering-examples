@@ -44,8 +44,14 @@
 			</dependency>
 			<dependency>
 				<groupId>fish.payara.arquillian</groupId>
-				<artifactId>arquillian-payara-server-remote</artifactId>
+				<artifactId>arquillian-payara-micro-remote</artifactId>
 				<version>4.0.alpha4</version>
+			</dependency>
+			<dependency>
+				<groupId>fish.payara.arquillian</groupId>
+				<artifactId>payara-micro-deployer</artifactId>
+				<version>4.0.alpha4</version>
+				<type>war</type>
 			</dependency>
 			<dependency>
 				<groupId>io.lettuce</groupId>
@@ -134,7 +140,6 @@
 			<artifactId>jakarta.servlet-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
@@ -178,6 +183,13 @@
 							<includeScope>runtime</includeScope>
 							<stripVersion>true</stripVersion>
 						</configuration>
+					</execution>
+					<execution>
+						<id>default-properties</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>properties</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -363,6 +375,7 @@
 				</property>
 			</activation>
 			<properties>
+				<test.container.image>icr.io/appcafe/open-liberty:full-java25-openj9-ubi-minimal</test.container.image>
 				<test.args>-Dtest.trust-all-certs=true</test.args>
 			</properties>
 			<dependencies>
@@ -385,10 +398,19 @@
 					<value>payara</value>
 				</property>
 			</activation>
+			<properties>
+				<test.container.image>payara/micro:latest</test.container.image>
+			</properties>
 			<dependencies>
 				<dependency>
 					<groupId>fish.payara.arquillian</groupId>
-					<artifactId>arquillian-payara-server-remote</artifactId>
+					<artifactId>arquillian-payara-micro-remote</artifactId>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>fish.payara.arquillian</groupId>
+					<artifactId>payara-micro-deployer</artifactId>
+					<type>war</type>
 					<scope>test</scope>
 				</dependency>
 			</dependencies>
@@ -401,6 +423,9 @@
 					<value>tomcat</value>
 				</property>
 			</activation>
+			<properties>
+				<test.container.image>tomcat:latest</test.container.image>
+			</properties>
 			<dependencies>
 				<dependency>
 					<groupId>org.jboss.arquillian.container</groupId>
@@ -418,10 +443,7 @@
 				</property>
 			</activation>
 			<properties>
-				<management.port.1>9990</management.port.1>
-				<management.port.2>9991</management.port.2>
-				<management.port.3>9992</management.port.3>
-				<management.port.4>9993</management.port.4>
+				<test.container.image>quay.io/wildfly/wildfly:latest</test.container.image>
 			</properties>
 			<dependencies>
 				<dependency>

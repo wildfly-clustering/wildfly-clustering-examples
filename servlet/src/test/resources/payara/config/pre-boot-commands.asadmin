@@ -1,1 +1,0 @@
-set-hazelcast-configuration --hazelcastconfigurationfile /opt/payara/config/hazelcast-config.xml --enabled=true

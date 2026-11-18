@@ -5,7 +5,7 @@
 -->
 <arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 	<extension qualifier="OCI">
-		<property name="oci:image">icr.io/appcafe/open-liberty:full-java25-openj9-ubi-minimal</property>
+		<property name="oci:image">${test.container.image}</property>
 		<property name="oci:expose">httpPort httpsPort</property>
 		<property name="oci:start-message-pattern">.*\QCWPKI0063W\E.*</property>
 		<property name="env:KEYSTORE_REQUIRED">true</property>

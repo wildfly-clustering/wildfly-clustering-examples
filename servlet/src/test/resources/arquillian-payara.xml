@@ -5,76 +5,62 @@
 -->
 <arquillian xmlns="http://jboss.org/schema/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jboss.org/schema/arquillian https://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 	<extension qualifier="OCI">
-		<property name="oci:image">payara/micro:${test.container.version}</property>
-	</extension>
-	<!--
-	<extension qualifier="OCI">
-		<property name="oci:image">payara/server-web:${test.container.version}</property>
-		<property name="oci:host">localhost</property>
-		<property name="oci:expose">adminPort</property>
-		<property name="oci:start-message-pattern">.*\QSTART-SCRIPT-COMPLETE\E.*</property>
-		<property name="env:JVM_ARGS">-Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.rmi.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</property>
-		<property name="ref:ADMIN_HOST">adminHost</property>
-		<property name="ref:ADMIN_PORT">adminPort</property>
-		<property name="ref:ADMIN_USERNAME">adminUser</property>
-		<property name="ref:ADMIN_PASSWORD">adminPassword</property>
-		<property name="ref:DOMAIN_PORT_BASE">domainPortBase</property>
-		<property name="ref:SERVER_PORT_BASE">serverPortBase</property>
+		<property name="oci:image">${test.container.image}</property>
+		<property name="oci:expose">httpPort</property>
+		<property name="oci:start-message-pattern">.*\Qready in\E.*</property>
+		<property name="ref:payaramicro_port">httpPort</property>
+		<property name="env:payaramicro_hzConfigFile">/opt/payara/hazelcast-config.xml</property>
 		<property name="file:${project.basedir}/src/test/resources/${test.container}">/opt/payara</property>
+		<property name="file:${fish.payara.arquillian:payara-micro-deployer:war}">/opt/payara/deployments/payara-micro-deployer.war</property>
 	</extension>
-	<group qualifier="glassfish" default="true">
+	<group qualifier="payara" default="true">
 		<container qualifier="server-1" mode="manual">
 			<configuration>
-				<property name="jmxPort">8686</property>
-				<property name="domainPortBase">9000</property>
-				<property name="serverPortBase">8000</property>
-				<property name="adminHost">localhost</property>
-				<property name="adminPort">9048</property>
-				<property name="adminUser">admin</property>
-				<property name="adminPassword">admin</property>
-				<property name="authorisation">false</property>
-				<property name="availabilityEnabled">true</property>
+				<property name="httpPort">8080</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
 			</configuration>
 		</container>
 		<container qualifier="server-2" mode="manual">
 			<configuration>
-				<property name="jmxPort">8686</property>
-				<property name="domainPortBase">9100</property>
-				<property name="serverPortBase">8100</property>
-				<property name="adminHost">localhost</property>
-				<property name="adminPort">9148</property>
-				<property name="adminUser">admin</property>
-				<property name="adminPassword">admin</property>
-				<property name="authorisation">false</property>
-				<property name="availabilityEnabled">true</property>
+				<property name="httpPort">8081</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
 			</configuration>
 		</container>
 		<container qualifier="server-3" mode="manual">
 			<configuration>
-				<property name="jmxPort">8686</property>
-				<property name="domainPortBase">9200</property>
-				<property name="serverPortBase">8200</property>
-				<property name="adminHost">localhost</property>
-				<property name="adminPort">9248</property>
-				<property name="adminUser">admin</property>
-				<property name="adminPassword">admin</property>
-				<property name="authorisation">false</property>
-				<property name="availabilityEnabled">true</property>
+				<property name="httpPort">8082</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
 			</configuration>
 		</container>
 		<container qualifier="server-4" mode="manual">
 			<configuration>
-				<property name="jmxPort">8686</property>
-				<property name="domainPortBase">9300</property>
-				<property name="serverPortBase">8300</property>
-				<property name="adminHost">localhost</property>
-				<property name="adminPort">9348</property>
-				<property name="adminUser">admin</property>
-				<property name="adminPassword">admin</property>
-				<property name="authorisation">false</property>
-				<property name="availabilityEnabled">true</property>
+				<property name="httpPort">8083</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-5" mode="manual">
+			<configuration>
+				<property name="httpPort">8084</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-6" mode="manual">
+			<configuration>
+				<property name="httpPort">8085</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-7" mode="manual">
+			<configuration>
+				<property name="httpPort">8086</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
+			</configuration>
+		</container>
+		<container qualifier="server-8" mode="manual">
+			<configuration>
+				<property name="httpPort">8087</property>
+				<property name="deployerContextPath">/payara-micro-deployer</property>
 			</configuration>
 		</container>
 	</group>
-	-->
 </arquillian>
